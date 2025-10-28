@@ -1,0 +1,28 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: center-service
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  cloud:
+    discovery:
+      enabled: true
+
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+  main:
+    allow-bean-definition-overriding: true
+
+eureka:
+  client:
+    register-with-eureka: true      # 🔹 Bật đăng ký service
+    fetch-registry: true            # 🔹 Cho phép lấy thông tin từ Eureka
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    hostname: center-service      
+    prefer-ip-address: true   
