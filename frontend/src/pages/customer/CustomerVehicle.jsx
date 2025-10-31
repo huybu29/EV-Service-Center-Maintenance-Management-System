@@ -13,6 +13,7 @@ const MyVehicles = () => {
     manufactureYear: "",
     currentMileage: "",
     batteryType: "",
+    vin: "",
   });
 
   const userId = localStorage.getItem("userId");
@@ -58,7 +59,9 @@ const MyVehicles = () => {
   };
 
   if (loading)
-    return <p className="text-center mt-10 text-gray-600">Đang tải dữ liệu...</p>;
+    return (
+      <p className="text-center mt-10 text-gray-600">Đang tải dữ liệu...</p>
+    );
 
   return (
     <div className="bg-gray-50 min-h-screen py-12 px-6">
@@ -84,12 +87,21 @@ const MyVehicles = () => {
           >
             <div className="grid md:grid-cols-2 gap-5">
               {[
-                { key: "licensePlate", placeholder: "Biển số xe" },
+              
                 { key: "brand", placeholder: "Hãng xe" },
                 { key: "model", placeholder: "Model xe" },
-                { key: "manufactureYear", placeholder: "Năm sản xuất", type: "number" },
-                { key: "currentMileage", placeholder: "Số km hiện tại", type: "number" },
+                {
+                  key: "manufactureYear",
+                  placeholder: "Năm sản xuất",
+                  type: "number",
+                },
+                {
+                  key: "currentMileage",
+                  placeholder: "Số km hiện tại",
+                  type: "number",
+                },
                 { key: "batteryType", placeholder: "Loại pin" },
+                { key: "vin", placeholder: "VIN" },
               ].map((field) => (
                 <input
                   key={field.key}
@@ -97,7 +109,10 @@ const MyVehicles = () => {
                   placeholder={field.placeholder}
                   value={newVehicle[field.key]}
                   onChange={(e) =>
-                    setNewVehicle({ ...newVehicle, [field.key]: e.target.value })
+                    setNewVehicle({
+                      ...newVehicle,
+                      [field.key]: e.target.value,
+                    })
                   }
                   className="border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
                   required
@@ -130,10 +145,18 @@ const MyVehicles = () => {
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
                   {v.brand} {v.model}
                 </h3>
-                <p className="text-gray-600"><strong>Biển số:</strong> {v.licensePlate}</p>
-                <p className="text-gray-600"><strong>Năm sản xuất:</strong> {v.manufactureYear}</p>
-                <p className="text-gray-600"><strong>Số km:</strong> {v.currentMileage}</p>
-                <p className="text-gray-600"><strong>Loại pin:</strong> {v.batteryType}</p>
+                <p className="text-gray-600">
+                  <strong>Biển số:</strong> {v.licensePlate}
+                </p>
+                <p className="text-gray-600">
+                  <strong>Năm sản xuất:</strong> {v.manufactureYear}
+                </p>
+                <p className="text-gray-600">
+                  <strong>Số km:</strong> {v.currentMileage}
+                </p>
+                <p className="text-gray-600">
+                  <strong>Loại pin:</strong> {v.batteryType}
+                </p>
                 <p className="mt-2">
                   <strong>Trạng thái:</strong>{" "}
                   <span

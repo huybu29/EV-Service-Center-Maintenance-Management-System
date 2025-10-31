@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 public class VehicleDTO {
 
     private Long id;
-    private String licensePlate;      // Biển số xe
     private String brand;             // Hãng xe
     private String model;             // Dòng xe
     private int manufactureYear;      // Năm sản xuất
@@ -23,6 +22,7 @@ public class VehicleDTO {
     private String batteryType;       // Loại pin
     private Long customerId;          // ID khách hàng sở hữu
     private VehicleStatus status;     // Trạng thái xe
+    private String vin;              // Số VIN
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

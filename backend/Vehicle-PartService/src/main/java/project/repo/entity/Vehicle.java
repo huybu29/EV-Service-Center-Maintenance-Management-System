@@ -20,7 +20,6 @@ public class Vehicle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String licensePlate;   // Biển số
     private String brand;          // Hãng xe
     private String model;          // Model xe
     private int manufactureYear;              // Năm sản xuất
@@ -28,6 +27,9 @@ public class Vehicle {
     private Integer currentMileage;
     private String batteryType;
     private Long customerId;
+
+    @Column(unique = true, nullable = false)
+    private String vin;
 
     @Enumerated(EnumType.STRING)
     private VehicleStatus status;

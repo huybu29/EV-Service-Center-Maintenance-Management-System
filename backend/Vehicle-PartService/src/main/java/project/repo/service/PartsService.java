@@ -29,6 +29,32 @@ public class PartsService {
         return partsMapper.toDto(saved);
     }
 
+    // Trừ số lượng phụ tùng
+    @Transactional
+    public PartsDTO decreaseQuantity(Long partId, int amount) {
+        Parts part = partsRepository.findById(partId)
+                .orElseThrow(() -> new RuntimeException("Phụ tùng không tồn tại"));
+
+        if (part.getQuantity() == null || part.getQuantity() < amount) {
+            throw new RuntimeException(
+                    "Không thể trừ phụ tùng. Số lượng tồn hiện tại: " + (part.getQuantity() == null ? 0 : part.getQuantity())
+            );
+        }
+
+        part.setQuantity(part.getQuantity() - amount);
+        part.setUpdatedAt(LocalDateTime.now());
+
+        Parts saved = partsRepository.save(part);
+        return partsMapper.toDto(saved);
+    }
+
+    // Optional: kiểm tra stock trước khi trừ
+    public boolean canDecrease(Long partId, int amount) {
+        return partsRepository.findById(partId)
+                .map(p -> p.getQuantity() != null && p.getQuantity() >= amount)
+                .orElse(false);
+    }
+
     // 🔹 Lấy tất cả linh kiện
     public List<PartsDTO> findAll() {
         return partsRepository.findAll()
