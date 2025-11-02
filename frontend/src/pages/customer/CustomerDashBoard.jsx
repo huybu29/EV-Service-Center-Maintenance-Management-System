@@ -3,32 +3,35 @@ import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../services/AuthContext";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
+ 
 
 const CustomerDashboard = () => {
   const { user } = useContext(AuthContext);
   const [vehicles, setVehicles] = useState([]);
   const [reminders, setReminders] = useState([]);
-  const [serviceHistory, setServiceHistory] = useState([]);
+  const [serviceHistory, setServiceHistory] = useState([]); 
   const [centers, setCenters] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("accessToken");
-        const [vehicleRes, reminderRes, historyRes, centerRes] = await Promise.all([
+        const [vehicleRes, centerRes,  notificationRes] = await Promise.all([
           api.get("/vehicles/me", { headers: { Authorization: `Bearer ${token}` } }),
-          api.get("/reminders/me", { headers: { Authorization: `Bearer ${token}` } }),
-          api.get("/services/history", { headers: { Authorization: `Bearer ${token}` } }),
           api.get("/stations", { headers: { Authorization: `Bearer ${token}` } }),
+          api.get(`/notifications`, { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         setVehicles(vehicleRes.data || []);
-        setReminders(reminderRes.data || []);
-        setServiceHistory(historyRes.data || []);
+
         setCenters(centerRes.data || []);
+        setNotifications(notificationRes.data || []);
+
+        console.log("Fetched notifications:", notificationRes.data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching dashboard data:", err);
       } finally {
         setLoading(false);
       }
@@ -95,21 +98,73 @@ const CustomerDashboard = () => {
               <p className="text-gray-500">Chưa đăng ký phương tiện.</p>
             )}
           </div>
+          
+          
 
-          {/* Nhắc nhở */}
+          {/* 🔔 Nhắc nhở & Thông báo */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 text-left shadow-sm hover:shadow-2xl transition">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">🔔 Nhắc nhở gần nhất</h3>
-            {latestReminder ? (
-              <>
-                <p>{latestReminder.message}</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  {new Date(latestReminder.date).toLocaleDateString()}
-                </p>
-              </>
-            ) : (
-              <p className="text-gray-500">Không có nhắc nhở nào.</p>
-            )}
-          </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">🔔 Nhắc nhở & Thông báo gần đây</h3>
+
+            {/* Nhắc nhở */}
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-800 mb-1">📅 Nhắc nhở</h4>
+              {reminders.length > 0 ? (
+                <ul className="space-y-2">
+                  {reminders.slice(0, 2).map((reminder) => (
+                    <li
+                      key={reminder.id}
+                      className="p-3 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 transition"
+                    >
+                      <p className="text-gray-900 font-medium">{reminder.message}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(reminder.date).toLocaleDateString()}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500">Không có nhắc nhở nào.</p>
+              )}
+            </div>
+
+            {/* Thông báo */}
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-1">📢 Thông báo</h4>
+              {notifications.length > 0 ? (
+                <ul className="space-y-2">
+                  {notifications.slice(0, 2).map((noti) => (
+                    <li
+                      key={noti.id}
+                      className={`p-3 rounded-lg border ${
+                        noti.isRead
+                          ? "bg-gray-50 border-gray-200"
+                          : "bg-yellow-50 border-yellow-200"
+                      } hover:bg-gray-100 transition`}
+                    >
+                      <p className="font-medium text-gray-900">{noti.title}</p>
+                      <p className="text-gray-600 text-sm">{noti.message}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(noti.createdAt).toLocaleString()}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500">Không có thông báo nào.</p>
+              )}
+            </div>
+
+            {/* Nút xem tất cả */}
+            <div className="text-right mt-4">
+              <button
+                onClick={() => navigate("/notifications")}
+                className="text-blue-600 text-sm hover:underline"
+              >
+                🔍 Xem tất cả
+              </button>
+            </div>
+            </div>
+
 
           {/* Trung tâm gần nhất */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 text-left shadow-sm hover:shadow-2xl transition">
@@ -182,8 +237,24 @@ const CustomerDashboard = () => {
           </div>
         </div>
       </footer>
+
+      {/* 💬 Chat Bubble */}
+      <div
+        onClick={() => navigate("/chat")}
+        className="fixed bottom-1/2 right-6 transform translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl w-14 h-14 flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110"
+        title="Chat với kỹ thuật viên"
+      >
+        💬
+      </div>
+
     </div>
+
+    
+  
   );
+
+  
+
 };
 
 export default CustomerDashboard;

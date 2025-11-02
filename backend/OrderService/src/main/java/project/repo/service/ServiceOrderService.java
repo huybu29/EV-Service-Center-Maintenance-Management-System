@@ -28,7 +28,7 @@ public class ServiceOrderService {
 
     // 🔹 Lấy tất cả ServiceOrder
     public List<ServiceOrderDTO> findAll() {
-        return serviceOrderRepository.findAll()
+        return serviceOrderRepository.findAll() 
                 .stream()
                 .map(serviceOrderMapper::toDto)
                 .collect(Collectors.toList());
@@ -36,9 +36,9 @@ public class ServiceOrderService {
 
     // 🔹 Lấy ServiceOrder theo ID
     public ServiceOrderDTO findById(Long id) {
-        return serviceOrderRepository.findById(id)
+        return serviceOrderRepository.findById(id) 
                 .map(serviceOrderMapper::toDto)
-                .orElse(null);
+                .orElse(null); 
     }
 
     // 🔹 Lấy theo centerId (trung tâm)

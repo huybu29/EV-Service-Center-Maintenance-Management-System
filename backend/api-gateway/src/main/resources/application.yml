@@ -51,7 +51,14 @@ spring:
           predicates:
             - Path=/api/payments/**
           filters:
-            - JwtAuthFilter                    
+            - JwtAuthFilter
+
+        - id: communication-service
+          uri: lb://communication-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - JwtAuthFilter 
 eureka:
   client:
     service-url:
