@@ -48,6 +48,22 @@ public class VehicleController {
         return vehicleService.getAll();
     }
 
+
+    
+    // 🔹 Lấy tất cả xe của trung tâm (chỉ STAFF)
+    @GetMapping("/staff")
+    public List<VehicleDTO> getStaffVehicles(
+        @RequestHeader("X-User-Role") String role,
+        @RequestHeader("X-User-CenterId") Long centerId) {
+
+    checkRole(role, "STAFF");
+    return vehicleService.getByCenter(centerId);
+    }
+
+
+
+
+
     // 🔹 Lấy xe theo ID (STAFF, ADMIN, CUSTOMER – CUSTOMER chỉ xem xe của mình)
     @GetMapping("/{id}")
     public List<VehicleDTO> getById(
