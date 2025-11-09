@@ -1,14 +1,17 @@
 package project.repo.service;
 
 import lombok.RequiredArgsConstructor;
+import project.repo.clients.OrderClient;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import project.repo.dtos.AppointmentDTO;
-import project.repo.entity.Appointment;
+import project.repo.dtos.*;
+import project.repo.entity.*;
 import project.repo.entity.Appointment.AppointmentStatus;
+import project.repo.entity.Appointment.ServiceType;
 import project.repo.mapper.AppointmentMapper;
 import project.repo.repository.AppointmentRepository;
-
+import project.repo.clients.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,7 +23,7 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final AppointmentMapper appointmentMapper;
-
+    private final OrderClient orderClient;
     public AppointmentDTO create(AppointmentDTO dto) {
         Appointment appointment = appointmentMapper.toEntity(dto);
 
@@ -122,31 +125,44 @@ public class AppointmentService {
     Appointment appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cuộc hẹn với ID: " + appointmentId));
 
-   
     if (appointment.getStatus() != Appointment.AppointmentStatus.PENDING) {
         throw new IllegalStateException("Chỉ có thể nhận cuộc hẹn đang ở trạng thái PENDING.");
     }
 
+    
     appointment.setTechnicianId(staffId);
     appointment.setStatus(Appointment.AppointmentStatus.CONFIRMED);
-
     Appointment saved = appointmentRepository.save(appointment);
+
+  
+    try {
+        OrderDTO orderDTO = OrderDTO.builder()
+                .appointmentId(saved.getId())
+                .vehicleId(saved.getVehicleId())
+                .technicianId(saved.getTechnicianId())
+                .status("PENDING")
+                .serviceType(saved.getServiceType().name())
+                .build();
+
+        orderClient.createOrderFromBooking(orderDTO);
+        System.out.println(" Đã tạo Order tự động cho Appointment ID: " + saved.getId());
+    } catch (Exception e) {
+        System.err.println(" Lỗi khi gọi OrderService: " + e.getMessage());
+    }
+
     return appointmentMapper.toDto(saved);
 }
     public AppointmentDTO cancelBooking(Long appointmentId, Long userId, String role) {
     Appointment appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cuộc hẹn với ID: " + appointmentId));
 
-   
     if (appointment.getStatus() == Appointment.AppointmentStatus.COMPLETED ||
         appointment.getStatus() == Appointment.AppointmentStatus.CANCELED) {
         throw new IllegalStateException("Cuộc hẹn đã hoàn tất hoặc đã bị hủy trước đó.");
     }
 
     LocalDateTime now = LocalDateTime.now();
-    LocalDateTime appointmentDate = appointment.getAppointmentDate();
-
-    if (now.plusHours(12).isAfter(appointmentDate)) {
+    if (now.plusHours(12).isAfter(appointment.getAppointmentDate())) {
         throw new IllegalStateException("Không thể hủy cuộc hẹn trong vòng 12 giờ trước giờ hẹn.");
     }
 
@@ -159,6 +175,7 @@ public class AppointmentService {
 
     return appointmentMapper.toDto(saved);
 }
+
     // 🔹 Xóa Appointment
     public void delete(Long id) {
         appointmentRepository.deleteById(id);
