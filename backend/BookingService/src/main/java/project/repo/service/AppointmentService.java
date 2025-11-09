@@ -82,7 +82,7 @@ public class AppointmentService {
 
     AppointmentStatus currentStatus = existing.getStatus();
 
-    
+
     AppointmentStatus newStatus;
     try {
         newStatus = AppointmentStatus.valueOf(dto.getStatus().toUpperCase());
@@ -90,16 +90,31 @@ public class AppointmentService {
         throw new IllegalArgumentException("Trạng thái không hợp lệ: " + dto.getStatus());
     }
 
-    
     if (!isValidStatusTransition(currentStatus, newStatus)) {
         throw new IllegalArgumentException("Không thể chuyển trạng thái từ " 
             + currentStatus + " sang " + newStatus);
+    }
+
+    if (newStatus == AppointmentStatus.CANCELED) {
+        LocalDateTime now = LocalDateTime.now();
+        if (now.plusHours(12).isAfter(existing.getAppointmentDate())) {
+            throw new IllegalStateException("Không thể hủy cuộc hẹn trong vòng 12 giờ trước giờ hẹn.");
+        }
     }
 
     existing.setStatus(newStatus);
     existing.setAppointmentDate(dto.getAppointmentDate());
 
     Appointment saved = appointmentRepository.save(existing);
+
+    if (newStatus == AppointmentStatus.CANCELED) {
+        try {
+            orderClient.cancelOrderByAppointment(saved.getId()); 
+        } catch (Exception e) {
+            System.err.println("⚠ Không thể hủy Order tự động: " + e.getMessage());
+        }
+    }
+
     return appointmentMapper.toDto(saved);
 }
 

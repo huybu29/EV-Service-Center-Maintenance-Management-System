@@ -9,4 +9,6 @@ public interface OrderClient {
 
     @PostMapping("/api/orders/from-booking")
     OrderDTO createOrderFromBooking(@RequestBody OrderDTO orderDTO);
+    @PutMapping("/api/orders/cancel-by-booking/{bookingId}")
+    void cancelOrderByAppointment(@PathVariable Long AppointmentId);
 }

@@ -21,7 +21,7 @@ public class OrderChecklistItem {
     @Column(nullable = false)
     private String description;
 
-   
+    // Trạng thái
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ChecklistStatus status;

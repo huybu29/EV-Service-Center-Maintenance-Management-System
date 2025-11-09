@@ -15,7 +15,6 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    // 🔹 Helper kiểm tra quyền (role)
     private void checkRole(String roleHeader, String... allowedRoles) {
         for (String role : allowedRoles) {
             if (roleHeader != null && roleHeader.equalsIgnoreCase("ROLE_" + role)) {
@@ -25,13 +24,12 @@ public class OrderController {
         throw new RuntimeException("Access denied: required role " + String.join(", ", allowedRoles));
     }
 
-    // ✅ 1. API cho BookingService gọi sang để tạo Order khi appointment CONFIRMED
     @PostMapping("/from-appointment")
     public OrderDTO createOrderFromAppointment(@RequestBody OrderDTO orderDTO) {
         return orderService.createOrderFromAppointment(orderDTO);
     }
 
-    // ✅ 2. Lấy thông tin Order kèm checklist (STAFF, ADMIN)
+   
     @GetMapping("/{orderId}")
     public OrderDTO getOrderWithChecklist(
             @RequestHeader("X-User-Role") String role,
@@ -41,7 +39,6 @@ public class OrderController {
         return orderService.getOrderWithChecklist(orderId);
     }
 
-    // ✅ 3. Lấy toàn bộ checklist theo Order ID (STAFF, ADMIN, CUSTOMER xem được)
     @GetMapping("/{orderId}/checklist")
     public List<OrderChecklistItemDTO> getChecklistByOrder(
             @RequestHeader("X-User-Role") String role,
@@ -51,7 +48,6 @@ public class OrderController {
         return orderService.getChecklistByOrder(orderId);
     }
 
-    // ✅ 4. Cập nhật trạng thái checklist item (STAFF thực hiện)
     @PutMapping("/{orderId}/checklist/{itemId}")
     public OrderChecklistItemDTO updateChecklistItemStatus(
             @RequestHeader("X-User-Role") String role,
@@ -64,7 +60,6 @@ public class OrderController {
         return orderService.updateChecklistItemStatus(orderId, itemId, status, notes);
     }
 
-    // ✅ 5. (Tuỳ chọn) Lấy checklist mặc định theo serviceType
     @GetMapping("/default-checklist")
     public List<String> getDefaultChecklist(
             @RequestHeader("X-User-Role") String role,
@@ -72,5 +67,12 @@ public class OrderController {
 
         checkRole(role, "STAFF", "ADMIN");
         return orderService.getDefaultChecklist(serviceType);
+    }
+    @PutMapping("/cancel-by-appointment/{appointmentId}")
+    public void cancelOrderByAppointment(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable Long appointmentId) {
+
+        orderService.cancelOrderByAppointment(appointmentId);
     }
 }

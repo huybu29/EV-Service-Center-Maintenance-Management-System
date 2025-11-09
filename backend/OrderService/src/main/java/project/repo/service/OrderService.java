@@ -57,41 +57,53 @@ public class OrderService {
 
 
     public OrderChecklistItemDTO updateChecklistItemStatus(Long orderId, Long itemId, String status, String notes) {
-        OrderChecklistItem item = checklistRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Checklist item not found"));
+    OrderChecklistItem item = checklistRepository.findById(itemId)
+            .orElseThrow(() -> new RuntimeException("Checklist item not found"));
 
-        if (!item.getOrder().getId().equals(orderId)) {
-            throw new RuntimeException("Checklist item does not belong to this order");
-        }
-
-        item.setStatus(OrderChecklistItem.ChecklistStatus.valueOf(status));
-        if (notes != null) {
-            item.setNotes(notes);
-        }
-        checklistRepository.save(item);
-
-        // Kiểm tra nếu tất cả đã hoàn tất thì cập nhật trạng thái Order
-        Order order = item.getOrder();
-        boolean allPassed = order.getChecklistItems().stream()
-                .allMatch(ci -> ci.getStatus() == OrderChecklistItem.ChecklistStatus.PASSED);
-
-        if (allPassed) {
-            order.setStatus(Order.OrderStatus.COMPLETED);
-        } else if (order.getChecklistItems().stream()
-                .anyMatch(ci -> ci.getStatus() == OrderChecklistItem.ChecklistStatus.IN_PROGRESS)) {
-            order.setStatus(Order.OrderStatus.IN_PROGRESS);
-        }
-        orderRepository.save(order);
-
-        return OrderChecklistItemDTO.builder()
-                .id(item.getId())
-                .description(item.getDescription())
-                .status(item.getStatus().name())
-                .notes(item.getNotes())
-                .startedAt(item.getStartedAt())
-                .completedAt(item.getCompletedAt())
-                .build();
+    if (!item.getOrder().getId().equals(orderId)) {
+        throw new RuntimeException("Checklist item does not belong to this order");
     }
+
+  
+    item.setStatus(OrderChecklistItem.ChecklistStatus.valueOf(status));
+    if (notes != null) {
+        item.setNotes(notes);
+    }
+    checklistRepository.save(item);
+
+    Order order = item.getOrder();
+    List<OrderChecklistItem> checklist = order.getChecklistItems();
+
+    boolean allPassed = checklist.stream()
+            .allMatch(ci -> ci.getStatus() == OrderChecklistItem.ChecklistStatus.PASSED);
+
+    boolean anyInProgress = checklist.stream()
+            .anyMatch(ci -> ci.getStatus() == OrderChecklistItem.ChecklistStatus.IN_PROGRESS);
+
+    boolean anyFailed = checklist.stream()
+            .anyMatch(ci -> ci.getStatus() == OrderChecklistItem.ChecklistStatus.FAILED);
+
+
+    if (allPassed) {
+        
+        order.setStatus(Order.OrderStatus.COMPLETED);
+    } else if (anyInProgress) {
+        order.setStatus(Order.OrderStatus.IN_PROGRESS);
+    } else if (anyFailed) {
+        order.setStatus(Order.OrderStatus.PENDING);
+    }
+
+    orderRepository.save(order);
+
+    return OrderChecklistItemDTO.builder()
+            .id(item.getId())
+            .description(item.getDescription())
+            .status(item.getStatus().name())
+            .notes(item.getNotes())
+            .startedAt(item.getStartedAt())
+            .completedAt(item.getCompletedAt())
+            .build();
+}
 
     public List<OrderChecklistItemDTO> getChecklistByOrder(Long orderId) {
         List<OrderChecklistItem> checklist = checklistRepository.findByOrderId(orderId);
@@ -117,4 +129,24 @@ public class OrderService {
             default -> List.of("Kiểm tra chung");
         };
     }
+    private boolean isValidStatusTransition(Order.OrderStatus current, Order.OrderStatus next) {
+    if (current == next) return true;
+
+    return switch (current) {
+        case PENDING -> next == Order.OrderStatus.IN_PROGRESS;
+        case IN_PROGRESS -> next == Order.OrderStatus.COMPLETED;
+        case COMPLETED -> next == Order.OrderStatus.APPROVED;
+        default -> false; // APPROVED không thể chuyển tiếp
+    };
+}
+    @Transactional
+    public void cancelOrderByAppointment(Long appointmentId) {
+        Order order = orderRepository.findByAppointmentId(appointmentId);
+
+        if (order != null && order.getStatus() == Order.OrderStatus.PENDING) {
+            order.setStatus(Order.OrderStatus.CANCELED);
+            orderRepository.save(order);
+            System.out.println("✅ Order đã được tự động hủy vì booking bị hủy.");
+        }
+}
 }

@@ -10,7 +10,7 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
     
-    List<Order> findByAppointmentId(Long appointmentId);
+    Order findByAppointmentId(Long appointmentId);
 
   
     List<Order> findByTechnicianId(Long technicianId);

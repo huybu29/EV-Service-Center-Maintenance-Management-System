@@ -53,6 +53,7 @@ public class Order {
         PENDING,
         IN_PROGRESS,
         COMPLETED,
-        APPROVED
+        APPROVED,
+        CANCELED
     }
 }
