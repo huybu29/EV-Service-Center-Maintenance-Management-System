@@ -87,4 +87,18 @@ public class PartsController {
         checkRole(role, "ADMIN");
         partsService.delete(id);
     }
+
+    // 🔹 6. Trừ số lượng linh kiện (chỉ STAFF, ADMIN)
+// Không thể trừ khi quantity = 0
+@PostMapping("/{id}/decrease")
+public PartsDTO decreaseQuantity(
+        @RequestHeader("X-User-Role") String role,
+        @PathVariable Long id,
+        @RequestParam int amount) {
+
+    checkRole(role, "STAFF", "ADMIN"); // Chỉ STAFF hoặc ADMIN mới trừ được
+
+    return partsService.decreaseQuantity(id, amount);
+}
+
 }

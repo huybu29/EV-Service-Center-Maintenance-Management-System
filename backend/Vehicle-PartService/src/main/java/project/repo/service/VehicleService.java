@@ -56,7 +56,7 @@ public class VehicleService {
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
         existing.setBrand(dto.getBrand());
         existing.setModel(dto.getModel());
-        existing.setLicensePlate(dto.getLicensePlate());
+        existing.setVin(dto.getVin());
         existing.setBatteryType(dto.getBatteryType());
         existing.setManufactureYear(dto.getManufactureYear());
         existing.setCurrentMileage(dto.getCurrentMileage());
