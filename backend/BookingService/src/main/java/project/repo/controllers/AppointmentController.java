@@ -120,7 +120,16 @@ public class AppointmentController {
         dto.setCustomerId(existing.getCustomerId()); // giữ nguyên customerId
         return appointmentService.updateAppointment(dto);
     }
+    @PutMapping("/{id}/accept")
+    public AppointmentDTO acceptAppointment(
+        @PathVariable Long id,
+        @RequestHeader("X-User-Id") Long staffId,
+        @RequestHeader("X-User-Role") String role) {
 
+    checkRole(role, "STAFF"); // chỉ cho phép STAFF
+
+    return appointmentService.acceptBooking(id, staffId);
+}
     // 🔹 8. Xóa cuộc hẹn (chỉ ADMIN)
     @DeleteMapping("/{id}")
     public void deleteAppointment(
@@ -130,5 +139,14 @@ public class AppointmentController {
         checkRole(role, "ADMIN");
         appointmentService.delete(id);
     }
+    @PutMapping("/{id}/cancel")
+    public AppointmentDTO cancelAppointment(
+        @PathVariable Long id,
+        @RequestHeader("X-User-Id") Long userId,
+        @RequestHeader("X-User-Role") String role) {
+
+    checkRole(role, "CUSTOMER", "STAFF", "ADMIN");
+    return appointmentService.cancelBooking(id, userId, role);
+}
 }
 

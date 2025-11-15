@@ -22,7 +22,7 @@ public class AppointmentDTO {
     private String status;      // Dạng String (PENDING, CONFIRMED,...)
 
     private String notes;
-
+    private Long technicianId;    // ID kỹ thuật viên (từ TechnicianService)
     private Long customerId;        // ID khách hàng (từ CustomerService)
     private Long vehicleId;         // ID xe (từ VehicleService)
     private Long serviceCenterId;   // ID trung tâm dịch vụ (từ 
