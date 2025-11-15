@@ -50,6 +50,17 @@ const Navbar = () => {
               </Link>
             )}
 
+
+            {user?.role === "ROLE_STAFF" && (
+              <Link to="/staff">
+                <button className="border border-gray-500 text-gray-100 hover:bg-gray-800 px-3 py-2 rounded-lg text-sm transition">
+                  ⚙️ Quản trị
+                </button>
+              </Link>
+            )}
+
+            
+            
             <button
               onClick={logout}
               className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-sm transition"

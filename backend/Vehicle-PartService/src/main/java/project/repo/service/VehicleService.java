@@ -69,4 +69,16 @@ public class VehicleService {
     public void delete(Long id) {
         vehicleRepository.deleteById(id);
     }
+
+    
+
+
+    public List<VehicleDTO> getByCenter(Long centerId) {
+    return vehicleRepository.findByCenterId(centerId)
+            .stream()
+            .map(vehicleMapper::toDto)
+            .collect(Collectors.toList());
+    }
+
 }
+

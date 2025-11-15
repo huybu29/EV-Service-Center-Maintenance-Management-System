@@ -17,6 +17,20 @@ import AdminParts from './pages/admin/AdPartManagement';
 import MyVehicles from './pages/customer/CustomerVehicle';
 import BookingPage from './pages/customer/CustomerBooking';
 import PaymentPage from './pages/customer/CustomerPayment';
+
+
+
+import StaffDashboard from './pages/staff/StaffPage';
+import StaffCustomers from './pages/staff/StaffCustomers';
+import StaffServiceAppointments from './pages/staff/StaffServiceAppointments';
+import StaffMaintenanceProcess from './pages/staff/StaffMaintenanceProcess';
+import StaffParts from './pages/staff/StaffParts';
+import StaffVehicles from './pages/staff/StaffVehicles';
+
+
+
+
+
 function App() {
   return (
   <AuthProvider>
@@ -37,7 +51,15 @@ function App() {
           <Route path="/admin/bookings" element={<AdminAppointments/>}/>
           <Route path="/admin/stations" element={<AdminStations/>}/>
           <Route path="/admin/stations/:id" element={<AdminEditStation/>}/>
-          <Route path="/admin/parts" element={<AdminParts/>}/>
+          <Route path="/admin/parts" element={<AdminParts/>}/>          
+        </Route>
+        <Route path="/staff" element={<StaffDashboard/>}>
+          <Route path="/staff/customers" element={<StaffCustomers/>}/>
+          <Route path="/staff/appointments" element={<StaffServiceAppointments/>}/>
+          <Route path="/staff/maintenance" element={<StaffMaintenanceProcess/>}/>
+          <Route path="/staff/parts" element={<StaffParts/>}/>
+          <Route path="/staff/vehicles" element={<StaffVehicles/>}/>
+          
           
         </Route>
       </Routes>

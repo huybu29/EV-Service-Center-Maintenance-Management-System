@@ -13,6 +13,9 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     // Ví dụ: tìm danh sách xe theo customerId
     List<Vehicle> findByCustomerId(Long customerId);
 
+    
+    List<Vehicle> findByCenterId(Long centerId);
+
     // Ví dụ: tìm xe theo biển số
     Vehicle findByLicensePlate(String licensePlate);
 }
