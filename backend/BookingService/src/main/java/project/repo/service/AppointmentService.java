@@ -1,8 +1,10 @@
 package project.repo.service;
 
 import lombok.RequiredArgsConstructor;
+import project.repo.dtos.BookingCreatedEvent;
 import project.repo.clients.OrderClient;
-
+import project.repo.config.RabbitMQConfig;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.repo.dtos.*;
@@ -24,6 +26,11 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final AppointmentMapper appointmentMapper;
     private final OrderClient orderClient;
+    private final RabbitTemplate rabbitTemplate;
+
+    /**
+     * Hàm này được gọi bởi Controller khi khách hàng tạo đơn
+     */
     public AppointmentDTO create(AppointmentDTO dto) {
         Appointment appointment = appointmentMapper.toEntity(dto);
 
@@ -32,7 +39,7 @@ public class AppointmentService {
             throw new IllegalArgumentException("Không thể đặt lịch trong quá khứ.");
         }
 
-
+        // (Logic kiểm tra trùng lịch của bạn - Rất tốt)
         boolean exists = appointmentRepository.existsByAppointmentDateAndTechnicianId(
                 appointment.getAppointmentDate(),
                 appointment.getTechnicianId()
@@ -42,9 +49,30 @@ public class AppointmentService {
             throw new IllegalArgumentException("Slot này đã có người đặt, vui lòng chọn thời gian khác.");
         }
 
+        // 4. Lưu vào CSDL
         Appointment saved = appointmentRepository.save(appointment);
+        
+        // ⭐️ 5. TẠO VÀ GỬI SỰ KIỆN (EVENT)
+        System.out.println("BookingService: Đã lưu Booking #" + saved.getId());
+
+        BookingCreatedEvent event = new BookingCreatedEvent(
+            saved.getId(), 
+            saved.getCustomerId()
+            // Giả sử bạn có trường 'estimatedCost'
+        );
+
+        rabbitTemplate.convertAndSend(
+            RabbitMQConfig.EXCHANGE_NAME, // Tên Exchange
+            "booking.created", // Routing Key
+            event // Nội dung tin nhắn
+        );
+        
+        System.out.println("BookingService: Đã gửi sự kiện 'booking.created'.");
+
+        // 6. Trả về DTO
         return appointmentMapper.toDto(saved);
     }
+
 
     // 🔹 Lấy tất cả Appointment
     public List<AppointmentDTO> getAllAppointment() {

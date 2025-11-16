@@ -1,90 +1,123 @@
-// src/components/Navbar.jsx
 import React, { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
+import {
+  HiOutlineHome,
+  HiOutlineClock,
+  HiOutlineUser,
+  HiOutlineCog,
+  HiOutlineQuestionMarkCircle,
+  HiOutlineLogout,
+} from "react-icons/hi";
 
-const Navbar = () => {
-  const { isLoggedIn, user, logout } = useContext(AuthContext);
+const SidebarLink = ({ to, icon, label }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) =>
+      `flex items-center w-full px-4 py-2.5 rounded-lg text-sm font-medium transition ${
+        isActive
+          ? "bg-blue-100 text-blue-700"
+          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+      }`
+    }
+  >
+    {({ isActive }) => (
+      <>
+        <span
+          className={`mr-3 text-xl ${
+            isActive ? "text-blue-600" : "text-gray-400"
+          }`}
+        >
+          {icon}
+        </span>
+        {label}
+      </>
+    )}
+  </NavLink>
+);
+
+const CustomerLayout = () => {
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   return (
-    <nav className="bg-gray-900 text-gray-100 shadow-md px-6 py-4 flex justify-between items-center">
-      {/* Logo */}
-      <div className="text-2xl font-extrabold tracking-wide">
-        <Link to="/driver" className="hover:text-white transition duration-200">
-          ⚡ EV Service Center
-        </Link>
-      </div>
+    <div className="flex h-screen bg-gray-50 font-inter">
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-white p-4 flex flex-col justify-between border-r border-gray-200">
+        <div>
+          {/* USER INFO */}
+          <div className="flex items-center space-x-3 mb-8 px-2 py-4">
+            <img
+              src="https://i.pravatar.cc/80"
+              alt="avatar"
+              className="w-10 h-10 rounded-full"
+            />
+            <div className="flex flex-col overflow-hidden">
+              <h2 className="text-sm font-semibold text-gray-900 truncate">
+                {user?.fullName ? user.fullName : user?.username}
+              </h2>
+              <p className="text-xs text-gray-500 truncate">
+                {user?.email ?? "Chưa có email"}
+              </p>
+            </div>
+          </div>
 
-      {/* Menu links */}
-      <div className="hidden md:flex space-x-6 text-sm font-medium">
-        <Link to="/" className="hover:text-white transition duration-200">
-          Trang chủ
-        </Link>
-        <a href="#features" className="hover:text-white transition duration-200">
-          Tính năng
-        </a>
-        <a href="#pricing" className="hover:text-white transition duration-200">
-          Gói dịch vụ
-        </a>
-        <a href="#contact" className="hover:text-white transition duration-200">
-          Liên hệ
-        </a>
-      </div>
+          {/* MENU */}
+          <nav className="flex-1 flex flex-col">
+            <div className="space-y-2">
+              <SidebarLink
+                to="/customer/home"
+                icon={<HiOutlineHome />}
+                label="Trang chủ"
+              />
+              <SidebarLink
+                to="/customer/history"
+                icon={<HiOutlineClock />}
+                label="Lịch sử dịch vụ"
+              />
+              <SidebarLink
+                to="/customer/booking"
+                icon={<HiOutlineUser />}
+                label="Đặt lịch"
+              />
+            </div>
+            <div className="space-y-2 mt-8">
+              <SidebarLink
+                to="/customer/settings"
+                icon={<HiOutlineCog />}
+                label="Cài đặt"
+              />
+              <SidebarLink
+                to="/customer/support"
+                Click
+                icon={<HiOutlineQuestionMarkCircle />}
+                label="Hỗ trợ"
+              />
+            </div>
+          </nav>
+        </div>
 
-      {/* User / Auth Buttons */}
-      <div className="flex space-x-4 items-center">
-        {isLoggedIn ? (
-          <>
-            <span className="text-sm text-gray-300">
-              👋 Xin chào,{" "}
-              <span className="font-semibold text-white">
-                {user?.username || "Người dùng"}
-              </span>
-            </span>
+        {/* LOGOUT */}
+        <button
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
+          className="flex items-center w-full px-4 py-3 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
+        >
+          <span className="mr-3 text-lg text-gray-500">
+            <HiOutlineLogout />
+          </span>
+          Đăng xuất
+        </button>
+      </aside>
 
-            {user?.role === "ROLE_ADMIN" && (
-              <Link to="/admin">
-                <button className="border border-gray-500 text-gray-100 hover:bg-gray-800 px-3 py-2 rounded-lg text-sm transition">
-                  ⚙️ Quản trị
-                </button>
-              </Link>
-            )}
-
-
-            {user?.role === "ROLE_STAFF" && (
-              <Link to="/staff">
-                <button className="border border-gray-500 text-gray-100 hover:bg-gray-800 px-3 py-2 rounded-lg text-sm transition">
-                  ⚙️ Quản trị
-                </button>
-              </Link>
-            )}
-
-            
-            
-            <button
-              onClick={logout}
-              className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-sm transition"
-            >
-              Đăng xuất
-            </button>
-          </>
-        ) : (
-          <>
-            <Link to="/login">
-              <button className="border border-gray-400 text-gray-100 px-4 py-2 rounded-lg hover:bg-gray-800 transition text-sm">
-                Đăng nhập
-              </button>
-            </Link>
-            <Link to="/register">
-              <button className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition text-sm">
-                Đăng ký
-              </button>
-            </Link>
-          </>
-        )}
-      </div>
-    </nav>
+      {/* MAIN CONTENT */}
+      <main className="flex-1 p-6 sm:p-8 overflow-y-auto">
+        <Outlet />
+      </main>
+    </div>
   );
 };
 
-export default Navbar;
+export default CustomerLayout;

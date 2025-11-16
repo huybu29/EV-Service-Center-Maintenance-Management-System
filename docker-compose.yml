@@ -1,0 +1,191 @@
+version: '3.8'
+
+services:
+  
+  # === 1. HẠ TẦNG (INFRASTRUCTURE) ===
+  # (Không thay đổi)
+  rabbitmq:
+    image: rabbitmq:3.9-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+  
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3307:3307"
+    environment:
+      # Bạn có thể thay đổi CSDL mặc định, nhưng các service sẽ tự tạo CSDL
+      - MYSQL_ROOT_PASSWORD=root 
+      - MYSQL_DATABASE=default_db
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  # === 2. SPRING CLOUD CORE (ĐÃ SỬA PATH) ===
+
+  eureka-server:
+    build: ./backend/eureka-server  # ⭐️ SỬA
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    # Eureka không phụ thuộc vào service nào
+
+  config-server:
+    build: ./backend/config-server  # ⭐️ SỬA
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      # Ghi đè localhost trong application.yml
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server 
+
+  api-gateway:
+    build: ./backend/api-gateway  # ⭐️ SỬA
+    container_name: api-gateway
+    ports:
+      - "8067:8067"
+    depends_on:
+      - eureka-server
+      - config-server
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+
+  # === 3. DỊCH VỤ DỰ ÁN 2 (ĐÃ SỬA PATH) ===
+
+  booking-service:
+    build: ./backend/BookingService  # ⭐️ SỬA
+    container_name: booking-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql
+      - rabbitmq
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3307/booking_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  center-service:
+    build: ./backend/CenterService  # ⭐️ SỬA
+    container_name: center-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3307/center_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  order-service:
+    build: ./backend/OrderService  # ⭐️ SỬA
+    container_name: order-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql
+      - rabbitmq
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3307/order_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  payment-service:
+    build: ./backend/PaymentService  # ⭐️ SỬA
+    container_name: payment-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql
+      - rabbitmq
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3307/payment_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  vehicle-part-service:
+    build: ./backend/Vehicle-PartService  # ⭐️ SỬA
+    container_name: vehicle-part-service
+    ports:
+      - "8086:8086"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3307/vehicle_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  communication-service:
+    build: ./backend/CommunicationService  # ⭐️ SỬA
+    container_name: communication-service
+    ports:
+      - "8089:8089"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql
+      - rabbitmq
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3307/comm_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  # === 4. DỊCH VỤ FRONTEND (GIỮ NGUYÊN) ===
+  frontend-app:
+    build: ./frontend # (Giữ nguyên vì nó nằm ngoài /backend)
+    container_name: frontend-app
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+
+# === 5. CẤU HÌNH VOLUMES ===
+volumes:
+  mysql-data:
+  redis-data:

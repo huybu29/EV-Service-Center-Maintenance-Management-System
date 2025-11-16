@@ -1,202 +1,183 @@
-import React, { useEffect, useState } from "react";
-import api from "../../services/api";
+import React, { useState, useEffect } from "react";
 
-const StaffServiceAppointments = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [search, setSearch] = useState("");
-  const [filteredAppointments, setFilteredAppointments] = useState([]);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
+// === DỮ LIỆU GIẢ (MOCK DATA) ===
+const mockData = {
+  pending: [
+    {
+      id: 1,
+      model: "VinFast VF8",
+      plate: "75A-123.45",
+      customer: "Nguyễn Văn A",
+      avatar: "https://i.pravatar.cc/80?u=1",
+      service: "Bảo dưỡng định kỳ",
+    },
+    {
+      id: 2,
+      model: "Kia EV6",
+      plate: "29B-678.90",
+      customer: "Trần Thị B",
+      avatar: "https://i.pravatar.cc/80?u=2",
+      service: "Kiểm tra pin",
+    },
+    {
+      id: 3,
+      model: "Hyundai Ioniq 5",
+      plate: "51F-112.21",
+      customer: "Lê Văn C",
+      avatar: "https://i.pravatar.cc/80?u=3",
+      service: "Cập nhật phần mềm",
+    },
+  ],
+  inProgress: [
+    {
+      id: 4,
+      model: "VinFast VF9",
+      plate: "30K-555.88",
+      customer: "Phạm Thị D",
+      avatar: "https://i.pravatar.cc/80?u=4",
+      service: "Sửa chữa hệ thống treo",
+    },
+  ],
+  waitingForParts: [
+    {
+      id: 5,
+      model: "Tesla Model 3",
+      plate: "92A-444.11",
+      customer: "Võ Văn E",
+      avatar: "https://i.pravatar.cc/80?u=5",
+      service: "Đợi cảm biến ABS",
+    },
+  ],
+  completed: [
+    {
+      id: 6,
+      model: "Porsche Taycan",
+      plate: "43A-987.65",
+      customer: "Hoàng Thị F",
+      avatar: "https://i.pravatar.cc/80?u=6",
+      service: "Đã hoàn thành bảo dưỡng",
+    },
+  ],
+};
 
-  // 🔹 Lấy thông tin nhân viên (đã lưu khi login)
-  const staffId = localStorage.getItem("userId");
-  const staffRole = localStorage.getItem("role") || "ROLE_STAFF";
+// --- COMPONENT CON ---
 
-  // ✅ Lấy danh sách lịch hẹn
-  const fetchAppointments = async () => {
-    try {
-      const res = await api.get("/appointments", {
-        headers: {
-          "X-User-Id": staffId,
-          "X-User-Role": staffRole,
-        },
-      });
-      setAppointments(res.data);
-      setFilteredAppointments(res.data);
-    } catch (error) {
-      console.error("Lỗi khi tải danh sách lịch hẹn (Staff):", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
-
-  // ✅ Lọc tìm kiếm
-  useEffect(() => {
-    setFilteredAppointments(
-      appointments.filter(
-        (a) =>
-          (a.notes || "").toLowerCase().includes(search.toLowerCase()) ||
-          (a.serviceType || "").toLowerCase().includes(search.toLowerCase()) ||
-          (a.status || "").toLowerCase().includes(search.toLowerCase())
-      )
-    );
-  }, [search, appointments]);
-
-  // ✅ Cập nhật trạng thái (PUT /appointments/{id})
-  const handleStatusChange = async (id, newStatus) => {
-    try {
-      const appointment = selectedAppointment
-        ? { ...selectedAppointment, status: newStatus }
-        : null;
-
-      if (!appointment) return;
-
-      await api.put(`/appointments/${id}`, appointment, {
-        headers: {
-          "X-User-Id": staffId,
-          "X-User-Role": staffRole,
-        },
-      });
-
-      alert("✅ Cập nhật trạng thái thành công!");
-      setSelectedAppointment(null);
-      fetchAppointments();
-    } catch (error) {
-      console.error("Lỗi khi cập nhật trạng thái:", error);
-      alert("Cập nhật trạng thái thất bại!");
-    }
-  };
-
+// Component Thẻ Lịch hẹn (Đã xóa icon)
+const AppointmentCard = ({ appointment }) => {
   return (
-    <div className="bg-gray-50 p-6 rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold mb-2 text-gray-800">
-        📅 Quản lý lịch hẹn (Nhân viên)
-      </h2>
-      <p className="text-gray-600 mb-4">
-        Danh sách lịch hẹn tại trạm của bạn. Bạn chỉ có thể thay đổi trạng thái
-        thực hiện.
-      </p>
-
-      {/* Thanh tìm kiếm */}
-      <div className="flex justify-between mb-4">
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo dịch vụ, trạng thái, ghi chú..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 w-1/2"
+    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start">
+        {/* Thông tin xe */}
+        <div>
+          <p className="text-sm font-semibold text-gray-800">
+            {appointment.model}
+          </p>
+          <p className="text-base font-bold text-gray-900 my-1">
+            {appointment.plate}
+          </p>
+          <p className="text-sm text-gray-600">{appointment.customer}</p>
+        </div>
+        {/* Avatar */}
+        <img
+          src={appointment.avatar}
+          alt={appointment.customer}
+          className="w-10 h-10 rounded-full"
         />
       </div>
-
-      {/* Bảng danh sách */}
-      <div className="overflow-x-auto rounded-lg shadow">
-        <table className="min-w-full bg-white">
-          <thead className="bg-blue-100 text-gray-700">
-            <tr>
-              <th className="px-4 py-2">#</th>
-              <th className="px-4 py-2">Ngày hẹn</th>
-              <th className="px-4 py-2">Dịch vụ</th>
-              <th className="px-4 py-2">Trạng thái</th>
-              <th className="px-4 py-2">Ghi chú</th>
-              <th className="px-4 py-2">Khách hàng</th>
-              <th className="px-4 py-2">Xe</th>
-              <th className="px-4 py-2">Trung tâm</th>
-              <th className="px-4 py-2 text-center">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredAppointments.length > 0 ? (
-              filteredAppointments.map((a, idx) => (
-                <tr key={a.id} className="border-t hover:bg-blue-50 transition">
-                  <td className="px-4 py-2">{idx + 1}</td>
-                  <td className="px-4 py-2">
-                    {new Date(a.appointmentDate).toLocaleString("vi-VN")}
-                  </td>
-                  <td className="px-4 py-2">{a.serviceType}</td>
-                  <td className="px-4 py-2">{a.status}</td>
-                  <td className="px-4 py-2">{a.notes || "-"}</td>
-                  <td className="px-4 py-2">{a.customerId}</td>
-                  <td className="px-4 py-2">{a.vehicleId}</td>
-                  <td className="px-4 py-2">{a.serviceCenterId}</td>
-                  <td className="px-4 py-2 text-center">
-                    <button
-                      onClick={() => setSelectedAppointment(a)}
-                      className="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 rounded transition"
-                    >
-                      ⚙️ Cập nhật trạng thái
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="9" className="text-center py-4 text-gray-500">
-                  Không có lịch hẹn nào.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* Thông tin dịch vụ (Đã xóa icon) */}
+      <div className="mt-4 pt-3 border-t border-gray-100">
+        <span className="text-sm text-gray-700">{appointment.service}</span>
       </div>
+    </div>
+  );
+};
 
-      {/* Modal cập nhật trạng thái */}
-      {selectedAppointment && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">
-              Cập nhật trạng thái
-            </h3>
-            <p className="text-gray-700 mb-2">
-              <strong>Dịch vụ:</strong> {selectedAppointment.serviceType}
-            </p>
-            <p className="text-gray-700 mb-2">
-              <strong>Khách hàng:</strong> {selectedAppointment.customerId}
-            </p>
-            <p className="text-gray-700 mb-4">
-              <strong>Trạng thái hiện tại:</strong>{" "}
-              {selectedAppointment.status}
-            </p>
+// Component Cột Kanban
+const KanbanColumn = ({ title, count, bgColor, children }) => {
+  return (
+    <div className={`flex flex-col ${bgColor} rounded-lg p-4`}>
+      {/* Header cột */}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-semibold text-gray-800">{title}</h3>
+        <span className="bg-white text-gray-700 text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full border border-gray-200">
+          {count}
+        </span>
+      </div>
+      {/* Thẻ */}
+      <div className="space-y-4 overflow-y-auto">{children}</div>
+    </div>
+  );
+};
 
-            <select
-              value={selectedAppointment.status}
-              onChange={(e) =>
-                setSelectedAppointment({
-                  ...selectedAppointment,
-                  status: e.target.value,
-                })
-              }
-              className="border px-3 py-2 rounded w-full mb-4"
-            >
-              <option value="PENDING">PENDING</option>
-              <option value="CONFIRMED">CONFIRMED</option>
-              <option value="IN_PROGRESS">IN_PROGRESS</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="CANCELED">CANCELED</option>
-            </select>
+// --- COMPONENT CHÍNH ---
 
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setSelectedAppointment(null)}
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={() =>
-                  handleStatusChange(
-                    selectedAppointment.id,
-                    selectedAppointment.status
-                  )
-                }
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Lưu thay đổi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+const StaffServiceAppointments = () => {
+  const [appointments, setAppointments] = useState({
+    pending: [],
+    inProgress: [],
+    waitingForParts: [],
+    completed: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setAppointments(mockData);
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-gray-500">Đang tải lịch hẹn...</div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Cột 1: Chờ Tiếp Nhận */}
+        <KanbanColumn
+          title="Chờ Tiếp Nhận"
+          count={appointments.pending.length}
+          bgColor="bg-gray-100"
+        >
+          {appointments.pending.map((app) => (
+            <AppointmentCard key={app.id} appointment={app} />
+          ))}
+        </KanbanColumn>
+
+        {/* Cột 2: Đang Thực Hiện */}
+        <KanbanColumn
+          title="Đang Thực Hiện"
+          count={appointments.inProgress.length}
+          bgColor="bg-yellow-100"
+        >
+          {appointments.inProgress.map((app) => (
+            <AppointmentCard key={app.id} appointment={app} />
+          ))}
+        </KanbanColumn>
+
+        {/* Cột 3: Chờ Phụ Tùng */}
+        <KanbanColumn
+          title="Chờ Phụ Tùng"
+          count={appointments.waitingForParts.length}
+          bgColor="bg-orange-100"
+        >
+          {appointments.waitingForParts.map((app) => (
+            <AppointmentCard key={app.id} appointment={app} />
+          ))}
+        </KanbanColumn>
+
+        {/* Cột 4: Hoàn Tất */}
+        <KanbanColumn
+          title="Hoàn Tất"
+          count={appointments.completed.length}
+          bgColor="bg-green-100"
+        >
+          {appointments.completed.map((app) => (
+            <AppointmentCard key={app.id} appointment={app} />
+          ))}
+        </KanbanColumn>
+      </div>
     </div>
   );
 };

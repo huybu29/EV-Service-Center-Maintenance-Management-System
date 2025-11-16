@@ -25,18 +25,7 @@ public ResponseEntity<UserDTO> createCustomerAccount(@RequestBody UserDTO custom
 }
 
 
-    @PostMapping("/appointments/create")
-public ResponseEntity<AppointmentDTO> createAppointment(
-        @RequestHeader("X-User-Role") String role,
-        @RequestBody AppointmentDTO dto) {
 
-    if (!role.equalsIgnoreCase("ROLE_STAFF")) {
-        throw new RuntimeException("Access denied: chỉ STAFF mới tạo lịch hẹn");
-    }
-
-    AppointmentDTO created = userService.createAppointment(dto);
-    return ResponseEntity.ok(created);
-}
 
 
     // 🧩 Helper kiểm tra quyền truy cập

@@ -49,17 +49,7 @@ public class VehicleController {
     }
 
 
-    
-    // 🔹 Lấy tất cả xe của trung tâm (chỉ STAFF)
-    @GetMapping("/staff")
-    public List<VehicleDTO> getStaffVehicles(
-        @RequestHeader("X-User-Role") String role,
-        @RequestHeader("X-User-CenterId") Long centerId) {
-
-    checkRole(role, "STAFF");
-    return vehicleService.getByCenter(centerId);
-    }
-
+ 
 
 
 

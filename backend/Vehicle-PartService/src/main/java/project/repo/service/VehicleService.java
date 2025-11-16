@@ -73,12 +73,7 @@ public class VehicleService {
     
 
 
-    public List<VehicleDTO> getByCenter(Long centerId) {
-    return vehicleRepository.findByCenterId(centerId)
-            .stream()
-            .map(vehicleMapper::toDto)
-            .collect(Collectors.toList());
-    }
+ 
 
 }
 

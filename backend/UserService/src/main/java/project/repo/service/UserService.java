@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import project.repo.entity.User;
 import project.repo.mapper.UserMapper;
 import project.repo.repository.UserRepository;
-import project.repo.controllers.AppointmentDTO;
+
 import project.repo.dtos.UserDTO;
 
 @Service
@@ -119,8 +119,5 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public AppointmentDTO createAppointment(AppointmentDTO dto) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'createAppointment'");
-    }
+    
 }
