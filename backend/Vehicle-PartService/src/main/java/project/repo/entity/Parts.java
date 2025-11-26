@@ -33,7 +33,7 @@ public class Parts {
     private String unit;
 
     private Double price;
-
+    
     private Integer quantity;
     @Enumerated(EnumType.STRING)
     private PartStatus status;
@@ -42,6 +42,7 @@ public class Parts {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String aiForecast;
     public enum PartStatus {
     ACTIVE,
     INACTIVE

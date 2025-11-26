@@ -39,7 +39,7 @@ public class Appointment {
 
     private Long customerId;
 
-    private Long technicianId;
+    private Long staffId;
     private Long vehicleId;
 
     private Long serviceCenterId;

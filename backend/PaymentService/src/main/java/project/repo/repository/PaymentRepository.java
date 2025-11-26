@@ -9,5 +9,5 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
   List<Payment> findByUserID(Long userID);  
   boolean existsByBookingID(Long bookingID);
-  
+  Payment findByBookingID(Long bookingID);
 }

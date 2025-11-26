@@ -139,13 +139,13 @@ const AdminUsers = () => {
                       onClick={() => navigate(`/admin/users/${u.id}`)}
                       className="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 rounded transition"
                     >
-                      ✏️ Sửa
+                       Sửa
                     </button>
                     <button
                       onClick={() => handleDelete(u.id)}
                       className="px-3 py-1 bg-red-100 hover:bg-red-200 rounded transition"
                     >
-                      🗑️ Xóa
+                       Xóa
                     </button>
                   </td>
                 </tr>

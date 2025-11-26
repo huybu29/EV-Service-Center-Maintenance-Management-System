@@ -36,18 +36,18 @@ public class User implements UserDetails {
 
     private String role; 
     @Enumerated(EnumType.STRING)
-    private Status status; // ACTIVE, INACTIVE
-
+    private Status status; // AVAIABLE, BUSY
+    private String staffStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    private Long stationId;
     @PrePersist
     void onCreate() { createdAt = LocalDateTime.now(); }
 
     @PreUpdate
     void onUpdate() { updatedAt = LocalDateTime.now(); }
   
-    public enum Status { ACTIVE, INACTIVE }
+    public enum Status { AVAIABLE, BUSY }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

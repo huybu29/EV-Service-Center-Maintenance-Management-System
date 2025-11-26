@@ -1,6 +1,7 @@
 package project.repo.config;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import io.jsonwebtoken.Claims;
@@ -8,7 +9,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-
+import org.springframework.http.server.reactive.ServerHttpRequest;
 @Component
 public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Config> {
 
@@ -23,56 +24,66 @@ public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Co
 
     @Override
     public GatewayFilter apply(Config config) {
-        return (exchange, chain) -> {
-            String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
+    return (exchange, chain) -> {
+      
+        ServerHttpRequest request = exchange.getRequest().mutate()
+                .headers(httpHeaders -> {
+                    httpHeaders.remove("X-User-Id");
+                    httpHeaders.remove("X-User-Role");
+                    httpHeaders.remove("X-User-Station-Id");
+                })
+                .build();
 
-            // 🔸 Nếu không có token, cho phép request đi tiếp (public endpoint)
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return chain.filter(exchange);
+      
+        ServerWebExchange mutatedExchange = exchange.mutate().request(request).build();
+
+        String authHeader = request.getHeaders().getFirst("Authorization");
+
+      
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return chain.filter(mutatedExchange);
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            // ✅ Parse và xác thực JWT
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(SECRET_KEY)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            Object userIdObj = claims.get("userId");
+            Object roleObj = claims.get("role");
+            Object stationIdObj = claims.get("stationId");
+
+            
+            ServerHttpRequest.Builder requestBuilder = mutatedExchange.getRequest().mutate();
+
+            if (userIdObj != null) {
+                requestBuilder.header("X-User-Id", String.valueOf(userIdObj));
             }
 
-            String token = authHeader.substring(7);
-
-            try {
-                // ✅ Parse và xác thực JWT
-                Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(SECRET_KEY)
-                        .build()
-                        .parseClaimsJws(token)
-                        .getBody();
-
-                // 🔹 Lấy userId và role từ payload
-                Object userIdObj = claims.get("userId");
-                Object roleObj = claims.get("role"); // <— thêm dòng này
-
-                // 🔹 Gắn header mới vào request nếu có
-                var mutatedRequest = exchange.getRequest().mutate();
-
-                if (userIdObj != null) {
-                    String userId = String.valueOf(userIdObj);
-                    mutatedRequest.header("X-User-Id", userId);
-                    System.out.println("✅ JWT hợp lệ. Gắn X-User-Id = " + userId);
-                }
-
-                if (roleObj != null) {
-                    String role = String.valueOf(roleObj);
-                    mutatedRequest.header("X-User-Role", role);
-                    System.out.println("✅ JWT hợp lệ. Gắn X-User-Role = " + role);
-                } else {
-                    System.out.println("⚠️ JWT không chứa role.");
-                }
-
-                exchange = exchange.mutate().request(mutatedRequest.build()).build();
-
-            } catch (Exception e) {
-                // ⚠️ JWT không hợp lệ → không chặn request, chỉ ghi log
-                System.out.println("❌ Invalid JWT: " + e.getMessage());
+            if (roleObj != null) {
+                requestBuilder.header("X-User-Role", String.valueOf(roleObj));
+            }
+            
+            if (stationIdObj != null) {
+                requestBuilder.header("X-User-Station-Id", String.valueOf(stationIdObj));
             }
 
-            // Tiếp tục chuỗi filter
-            return chain.filter(exchange);
-        };
-    }
+           
+            mutatedExchange = mutatedExchange.mutate().request(requestBuilder.build()).build();
+
+        } catch (Exception e) {
+            System.out.println("❌ Invalid JWT: " + e.getMessage());
+            
+        }
+
+        return chain.filter(mutatedExchange);
+    };
+}
 
     public static class Config {}
 }

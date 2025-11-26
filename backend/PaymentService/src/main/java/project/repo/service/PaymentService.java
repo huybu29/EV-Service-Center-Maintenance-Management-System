@@ -80,7 +80,11 @@ public class PaymentService {
                 .orElseThrow(() -> new RuntimeException("Payment not found with ID: " + paymentID));
         return paymentMapper.toDto(payment);
     }
-
+public PaymentDto getByBookingID(Long bookingID) {
+        Payment payment = paymentRepository.findByBookingID(bookingID);
+               
+        return paymentMapper.toDto(payment);
+    }
     public List<PaymentDto> getPaymentByUserId(Long userId) {
         return paymentRepository.findByUserID(userId)
                 .stream()

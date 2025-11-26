@@ -25,6 +25,9 @@ const LoginPage = () => {
       case "ROLE_CUSTOMER":
         navigate("/customer/home");
         break;
+      case "ROLE_TECHNICIAN":
+        navigate("/technician/dashboard");
+        break;  
       default:
         navigate("/");
     }

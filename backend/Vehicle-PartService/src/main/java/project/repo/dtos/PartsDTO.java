@@ -25,6 +25,6 @@ public class PartsDTO {
     private Integer minQuantity;  // Số lượng tối thiểu
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    private String aiForecast;
 
 }

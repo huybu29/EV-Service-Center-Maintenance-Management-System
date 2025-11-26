@@ -2,6 +2,7 @@ package project.repo.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import project.repo.entity.OrderPart;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,10 +29,11 @@ public class Order {
 
   
     private Long vehicleId;
-    
+    private Long customerId;
    
+    @Builder.Default 
     @Column(nullable = false)
-    private Double totalCost;
+    private Double totalCost=0.0;
 
   
     @Enumerated(EnumType.STRING)
@@ -48,7 +50,8 @@ public class Order {
     
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderChecklistItem> checklistItems;
-
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderPart> parts;
     public enum OrderStatus {
         PENDING,
         IN_PROGRESS,

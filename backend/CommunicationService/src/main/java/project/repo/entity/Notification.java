@@ -43,12 +43,25 @@ public class Notification {
 
     private LocalDateTime readAt;
 
-    public enum NotificationType {
-    SYSTEM,             // Hệ thống
-    SERVICE,            // Bảo dưỡng
-    PAYMENT,       
-    REMINDER,
-    CUSTOM
+   public enum NotificationType {
+        // Nhóm Booking
+        BOOKING_CREATED, 
+        BOOKING_UPDATED,
+        BOOKING_CONFIRMED,
+        BOOKING_CANCELED,
+        
+        // Nhóm Order
+        ORDER_CREATED,
+        ORDER_IN_PROGRESS,
+        ORDER_COMPLETED,
+        ORDER_CANCELED,
+        
+        // Nhóm khác
+        JOB_ASSIGNED,
+        PAYMENT_CREATED,
+        PAYMENT_SUCCESS,
+        SYSTEM,
+        INFO
     }
     public enum Channel {
         WEB,

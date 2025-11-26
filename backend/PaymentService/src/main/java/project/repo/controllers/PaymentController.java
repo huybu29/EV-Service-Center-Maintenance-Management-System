@@ -7,7 +7,7 @@ import project.repo.dtos.PaymentDto;
 import project.repo.service.PaymentService;
 import project.repo.clients.BookingClient;
 import java.util.List;
-
+import org.springframework.http.ResponseEntity;
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
@@ -114,7 +114,11 @@ public PaymentDto updatePayment(
         checkRole(role, "ADMIN");
         paymentService.deletePayment(paymentId);
     }
-   
+    @GetMapping("/by-booking/{bookingID}")
+    public PaymentDto getPaymentByBookingID(@PathVariable Long bookingID) {
+      
+        return paymentService.getByBookingID(bookingID);
+    }
 }
 
 

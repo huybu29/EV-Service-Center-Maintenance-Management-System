@@ -24,7 +24,7 @@ const AdminOrders = () => {
   // Lấy danh sách đơn
   const fetchOrders = async () => {
     try {
-      const res = await api.get("/service-orders");
+      const res = await api.get("/orders/all");
       setOrders(res.data);
       setFilteredOrders(res.data);
     } catch (error) {
@@ -148,9 +148,7 @@ const AdminOrders = () => {
                   <td className="px-4 py-2">{o.serviceType}</td>
                   <td className="px-4 py-2 capitalize">{o.status}</td>
                   <td className="px-4 py-2">
-                    {o.finalCost
-                      ? `${o.finalCost.toLocaleString()}₫`
-                      : `${o.estimatedCost?.toLocaleString()}₫`}
+                    {o.totalCost }
                   </td>
                   <td className="px-4 py-2 text-center space-x-2">
                     <button

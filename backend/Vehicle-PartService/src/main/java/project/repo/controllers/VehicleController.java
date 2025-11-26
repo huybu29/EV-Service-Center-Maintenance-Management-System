@@ -56,19 +56,19 @@ public class VehicleController {
 
     // 🔹 Lấy xe theo ID (STAFF, ADMIN, CUSTOMER – CUSTOMER chỉ xem xe của mình)
     @GetMapping("/{id}")
-    public List<VehicleDTO> getById(
+    public VehicleDTO getById(
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id) {
 
         if ("ROLE_CUSTOMER".equalsIgnoreCase(role)) {
-            List<VehicleDTO> vehicles = vehicleService.getById(id);
-            if (vehicles.stream().anyMatch(v -> !v.getCustomerId().equals(userId))) {
+            VehicleDTO vehicles = vehicleService.getById(id);
+            if (!vehicles.getCustomerId().equals(userId)) {
                 throw new RuntimeException("Access denied: cannot view other customers' vehicles");
             }
             return vehicles;
         } else {
-            checkRole(role, "STAFF", "ADMIN");
+            checkRole(role, "STAFF", "ADMIN","TECHNICIAN");
             return vehicleService.getById(id);
         }
     }

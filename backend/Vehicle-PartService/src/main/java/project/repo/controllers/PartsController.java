@@ -2,6 +2,8 @@ package project.repo.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import project.repo.dtos.PartForecastDTO;
 import project.repo.dtos.PartsDTO;
 import project.repo.service.PartsService;
 
@@ -14,7 +16,6 @@ public class PartsController {
 
     private final PartsService partsService;
 
-    // 🔹 Helper kiểm tra quyền truy cập
     private void checkRole(String roleHeader, String... allowedRoles) {
         for (String role : allowedRoles) {
             if (roleHeader != null && roleHeader.equalsIgnoreCase("ROLE_" + role)) {
@@ -24,7 +25,7 @@ public class PartsController {
         throw new RuntimeException("Access denied: required role " + String.join(", ", allowedRoles));
     }
 
-    // 🔹 1. Tạo mới linh kiện (ADMIN)
+    // 🔹 1. Tạo mới linh kiện (Chỉ ADMIN)
     @PostMapping
     public PartsDTO create(
             @RequestHeader("X-User-Role") String role,
@@ -34,51 +35,45 @@ public class PartsController {
         return partsService.create(dto);
     }
 
-    // 🔹 2. Lấy tất cả linh kiện (CUSTOMER, STAFF, ADMIN)
+    // 🔹 2. Lấy danh sách (Hỗ trợ tìm kiếm)
+    // Cho phép: CUSTOMER (xem giá), STAFF, ADMIN, TECHNICIAN (tìm đồ để thay)
     @GetMapping
-    public List<PartsDTO> getAll(@RequestHeader("X-User-Role") String role) {
-        checkRole(role, "CUSTOMER", "STAFF", "ADMIN");
+    public List<PartsDTO> getAll(
+            @RequestHeader("X-User-Role") String role,
+            @RequestParam(required = false) String search) { // Thêm param search
+        
+        checkRole(role, "CUSTOMER", "STAFF", "ADMIN", "TECHNICIAN");
+        
+        if (search != null && !search.isEmpty()) {
+            return partsService.searchParts(search);
+        }
         return partsService.findAll();
     }
 
-    // 🔹 3. Lấy linh kiện theo ID
+    // 🔹 3. Lấy chi tiết
     @GetMapping("/{id}")
     public PartsDTO getById(
             @RequestHeader("X-User-Role") String role,
             @PathVariable Long id) {
 
-        checkRole(role, "CUSTOMER", "STAFF", "ADMIN");
+        checkRole(role, "CUSTOMER", "STAFF", "ADMIN", "TECHNICIAN");
         return partsService.findById(id);
     }
 
-    // 🔹 4. Cập nhật linh kiện
-    //    - ADMIN: có thể sửa toàn bộ
-    //    - STAFF: chỉ được sửa quantity & minQuantity
+    // 🔹 4. Cập nhật linh kiện (Logic phân quyền nằm trong Service)
     @PutMapping("/{id}")
     public PartsDTO update(
             @RequestHeader("X-User-Role") String role,
             @PathVariable Long id,
             @RequestBody PartsDTO dto) {
 
-        if (role.equalsIgnoreCase("ROLE_ADMIN")) {
-            return partsService.update(id, dto);
-        } 
-        else if (role.equalsIgnoreCase("ROLE_STAFF")) {
-            PartsDTO existing = partsService.findById(id);
-
-            // 🔹 Chỉ cập nhật số lượng và tồn kho tối thiểu
-            existing.setQuantity(dto.getQuantity());
-            existing.setMinQuantity(dto.getMinQuantity());
-
-            // Không cho phép thay đổi giá, tên, mã, loại, trạng thái
-            return partsService.update(id, existing);
-        } 
-        else {
-            throw new RuntimeException("Access denied: only ADMIN or STAFF can update parts");
-        }
+        // Cho phép cả ADMIN và STAFF gọi, nhưng Service sẽ xử lý logic ai được sửa gì
+        checkRole(role, "ADMIN", "STAFF");
+        
+        return partsService.updatePartByRole(id, dto, role);
     }
 
-    // 🔹 5. Xóa linh kiện (ADMIN)
+    // 🔹 5. Xóa linh kiện (Chỉ ADMIN)
     @DeleteMapping("/{id}")
     public void delete(
             @RequestHeader("X-User-Role") String role,
@@ -88,17 +83,32 @@ public class PartsController {
         partsService.delete(id);
     }
 
-    // 🔹 6. Trừ số lượng linh kiện (chỉ STAFF, ADMIN)
-// Không thể trừ khi quantity = 0
-@PostMapping("/{id}/decrease")
-public PartsDTO decreaseQuantity(
-        @RequestHeader("X-User-Role") String role,
-        @PathVariable Long id,
-        @RequestParam int amount) {
+    // 🔹 6. Trừ kho (Dùng cho API nội bộ hoặc Staff xuất kho lẻ)
+    // Lưu ý: OrderService sẽ gọi cái này qua Feign Client
+    @PostMapping("/{id}/decrease")
+    public PartsDTO decreaseQuantity(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable Long id,
+            @RequestParam int amount) {
 
-    checkRole(role, "STAFF", "ADMIN"); // Chỉ STAFF hoặc ADMIN mới trừ được
+        checkRole(role, "STAFF", "ADMIN", "TECHNICIAN");
 
-    return partsService.decreaseQuantity(id, amount);
-}
-
+        return partsService.decreaseQuantity(id, amount);
+    }
+    @GetMapping("/suggest")
+    public PartsDTO getSuggestedPart(
+            @RequestHeader("X-User-Role") String role,
+            @RequestParam String taskName) {
+        
+        checkRole(role, "TECHNICIAN", "STAFF", "ADMIN");
+        return partsService.getSuggestedPartByTask(taskName);
+    }
+    @PutMapping("/update-forecast")
+    public ResponseEntity<Void> updateForecast(@RequestBody PartForecastDTO dto) {
+        
+        // Gọi service chỉ cần truyền DTO là đủ
+        partsService.updateAiForecast(dto);
+        
+        return ResponseEntity.ok().build();
+    }
 }

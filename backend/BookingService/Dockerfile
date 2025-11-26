@@ -9,4 +9,4 @@ COPY target/repo-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8081
 
 # Bước 4: Lệnh chạy service
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

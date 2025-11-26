@@ -1,91 +1,87 @@
 package project.repo.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
+import project.repo.dtos.UserDTO;
 import project.repo.entity.User;
 import project.repo.mapper.UserMapper;
 import project.repo.repository.UserRepository;
-
-import project.repo.dtos.UserDTO;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-
-
-
-
-
-
+@Transactional
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    // 🔹 Lấy toàn bộ user
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll()
                 .stream()
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
-
-    // 🔹 Lấy user theo ID
+    @Cacheable(value = "users", key = "#id")
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return userMapper.toDto(user);
     }
 
-    // 🔹 Tạo user mới
     public UserDTO createUser(UserDTO dto) {
         if (userRepository.existsByUsername(dto.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
 
         User user = userMapper.toEntity(dto);
+
+        
+
         User saved = userRepository.save(user);
         return userMapper.toDto(saved);
     }
 
-    // 🔹 Tạo tài khoản khách hàng (nhân viên thực hiện)
     public UserDTO createCustomerAccount(UserDTO dto) {
         if (userRepository.existsByUsername(dto.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
 
-        // Gán role CUSTOMER
         dto.setRole("ROLE_CUSTOMER");
 
-        // Nếu có trạng thái, mặc định là ACTIVE
-        if (dto.getStatus() == null) {
-            dto.setStatus("ACTIVE");
-        }
-
         User user = userMapper.toEntity(dto);
+
+        
+
         User saved = userRepository.save(user);
         return userMapper.toDto(saved);
     }
-
-    // 🔹 Cập nhật user
+    @CacheEvict(value = "users", key = "#id")
     public UserDTO updateUser(Long id, UserDTO dto) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setFullName(dto.getFullName());
         user.setEmail(dto.getEmail());
         user.setPhone(dto.getPhone());
-        user.setRole(dto.getRole());
+
+        if (dto.getRole() != null) {
+            user.setRole(dto.getRole());
+        }
 
         if (dto.getStatus() != null) {
-            user.setStatus(User.Status.valueOf(dto.getStatus()));
+            try {
+                user.setStatus(User.Status.valueOf(dto.getStatus()));
+            } catch (IllegalArgumentException e) {
+                
+            }
         }
 
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
@@ -96,15 +92,26 @@ public class UserService implements UserDetailsService {
         return userMapper.toDto(saved);
     }
 
-    // 🔹 Xóa user
+    public void updateStaffStatus(Long id, String status) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        try {
+            user.setStaffStatus(status.toUpperCase());
+           
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid status: " + status);
+        }
+
+        userRepository.save(user);
+    }
+
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new UsernameNotFoundException("User not found");
+            throw new RuntimeException("User not found");
         }
         userRepository.deleteById(id);
     }
 
-    // 🔹 Lấy danh sách user theo role
     public List<UserDTO> getUsersByRole(String roleName) {
         List<User> users = userRepository.findByRole(roleName);
         return users.stream()
@@ -112,12 +119,9 @@ public class UserService implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
-    // 🔹 Xác thực người dùng cho Spring Security
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
-
-    
 }

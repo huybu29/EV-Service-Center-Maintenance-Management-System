@@ -35,11 +35,10 @@ public class VehicleService {
     }
 
     // 🔹 Lấy xe theo ID
-    public List<VehicleDTO> getById(Long id) {
+    public VehicleDTO getById(Long id) {
         return vehicleRepository.findById(id)
                 .map(vehicleMapper::toDto)
-                .stream()
-                .collect(Collectors.toList());
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
     }
 
     // 🔹 Lấy xe theo Customer ID

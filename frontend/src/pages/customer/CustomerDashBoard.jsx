@@ -3,24 +3,18 @@ import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../services/AuthContext";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
-// Đã thêm icons
 import {
   HiPlus,
-  HiOutlineClock,
   HiOutlineExclamation,
   HiOutlineFire,
   HiOutlineCheckCircle,
+  HiOutlineCalendar,
+  HiOutlineTag,
+  HiOutlineClock,
+  HiOutlineAnnotation
 } from "react-icons/hi";
 
-// === DỮ LIỆU GIẢ (MOCK) ĐỂ DỰNG UI ===
-// Do API của bạn không trả về dữ liệu này
-const mockAppointment = {
-  date: "THỨ SÁU, 26 THÁNG 7, 2024",
-  time: "14:00",
-  title: "Bảo dưỡng định kỳ 20,000 km",
-  status: "Đã xác nhận",
-};
-
+// === DỮ LIỆU GIẢ (MOCK) CHO REMINDERS ===
 const mockReminders = [
   {
     id: 1,
@@ -28,7 +22,7 @@ const mockReminders = [
     statusText: "Sắp tới hạn trong 500 km",
     currentKm: 19500,
     targetKm: 20000,
-    urgency: "warning", // 'warning', 'danger', 'info'
+    urgency: "warning",
     note: "Cần chú ý",
   },
   {
@@ -39,21 +33,11 @@ const mockReminders = [
     urgency: "danger",
     note: "Quá hạn",
   },
-  {
-    id: 3,
-    title: "Kiểm tra lốp và đảo lốp",
-    statusText: "Sẽ tới hạn trong 4,750 km",
-    currentKm: 15250,
-    targetKm: 20000,
-    urgency: "info",
-    note: "Sắp tới",
-  },
 ];
-// ======================================
 
-// Component Thanh tiến trình (Progress Bar)
+// Component Thanh tiến trình
 const ProgressBar = ({ value, max, colorClass = "bg-blue-600" }) => {
-  const percentage = (value / max) * 100;
+  const percentage = Math.min((value / max) * 100, 100);
   return (
     <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
       <div
@@ -76,7 +60,6 @@ const ReminderCard = ({
 }) => {
   const navigate = useNavigate();
 
-  // Xác định màu sắc dựa trên 'urgency'
   const colors = {
     warning: {
       bg: "bg-yellow-50",
@@ -110,12 +93,9 @@ const ReminderCard = ({
       className={`rounded-lg border ${theme.border} ${theme.bg} p-5 shadow-sm transition-all hover:shadow-md`}
     >
       <div className="flex flex-col md:flex-row md:items-start md:justify-between">
-        {/* Nội dung bên trái */}
         <div className="flex-1">
           <h4 className="font-bold text-gray-800 text-base">{title}</h4>
           <p className="text-sm text-gray-600 mt-1">{statusText}</p>
-
-          {/* Hiển thị thanh tiến trình theo km hoặc ngày */}
           {currentKm !== undefined && targetKm !== undefined ? (
             <>
               <ProgressBar
@@ -129,13 +109,12 @@ const ReminderCard = ({
             </>
           ) : (
             <>
-              <ProgressBar value={100} max={100} colorClass={theme.progress} />
-              <p className="text-xs text-red-500 mt-1.5">{dueDate}</p>
+              <p className="text-xs text-red-500 mt-1.5 font-semibold">
+                {dueDate}
+              </p>
             </>
           )}
         </div>
-
-        {/* Nội dung bên phải (Nút và Trạng thái) */}
         <div className="flex flex-col items-start md:items-end mt-4 md:mt-0 md:ml-4">
           <span
             className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${theme.bg} ${theme.text}`}
@@ -144,7 +123,7 @@ const ReminderCard = ({
             {note}
           </span>
           <button
-            onClick={() => navigate("/customer/booking")} // Đã cập nhật
+            onClick={() => navigate("/customer/booking")}
             className={`mt-3 px-4 py-2 rounded-lg text-sm font-semibold transition ${theme.button}`}
           >
             {urgency === "danger" ? "Đặt lịch khẩn" : "Đặt lịch ngay"}
@@ -155,61 +134,122 @@ const ReminderCard = ({
   );
 };
 
-// Component Thẻ Lịch hẹn
-const AppointmentCard = ({ appointment }) => {
+// === COMPONENT LỊCH HẸN (ĐÃ CẬP NHẬT LOGIC MỚI) ===
+const AppointmentCard = ({ appointment, stationsMap }) => {
   const navigate = useNavigate();
+
+  // Format Date: "Thứ Hai, 20/11/2025"
+  const formatDate = (dateString) => {
+    if (!dateString) return "---";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      weekday: "long",
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+    });
+  };
+const stationName = stationsMap?.[appointment.serviceCenterId] || `Trạm ID: ${appointment.serviceCenterId}`;
+  // Format Time: "13:04"
+  const formatTime = (dateString) => {
+    if (!dateString) return "--:--";
+    
+    const date = new Date(dateString);
+    const compensatedDate = new Date(date.getTime() - (7 * 60 * 60 * 1000));
+    return compensatedDate.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Helper màu sắc trạng thái
+  const getStatusStyle = (status) => {
+      switch(status) {
+          case 'PENDING': return 'text-yellow-600 bg-yellow-100';
+          case 'CONFIRMED': return 'text-green-600 bg-green-100';
+          case 'CANCELLED': return 'text-red-600 bg-red-100';
+          default: return 'text-gray-600 bg-gray-100';
+      }
+  };
+
+  const getStatusLabel = (status) => {
+      switch(status) {
+          case 'PENDING': return 'Chờ xác nhận';
+          case 'CONFIRMED': return 'Đã xác nhận';
+          case 'CANCELLED': return 'Đã hủy';
+          case 'COMPLETED': return 'Hoàn thành';
+          default: return status;
+      }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="p-4 border-b border-gray-200">
-        <p className="text-sm font-medium text-gray-500">
-          {appointment.date}
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 transition hover:shadow-md">
+      {/* Header Ngày */}
+      <div className="p-4 border-b border-gray-200 bg-blue-50 flex justify-between items-center">
+        <p className="text-sm font-bold text-blue-800 flex items-center gap-2 capitalize">
+          <HiOutlineCalendar className="w-5 h-5" />
+          {formatDate(appointment.appointmentDate)}
         </p>
+        <span className={`text-xs font-bold px-2 py-1 rounded ${getStatusStyle(appointment.status)}`}>
+            {getStatusLabel(appointment.status)}
+        </span>
       </div>
+
+      {/* Body Giờ & Dịch vụ */}
       <div className="p-5">
-        <div className="flex items-start space-x-4">
-          <div className="bg-blue-100 text-blue-700 font-bold p-3 rounded-lg flex items-center justify-center">
-            <span className="text-2xl">{appointment.time}</span>
+        <div className="flex items-start gap-4">
+          {/* Cột Giờ */}
+          <div className="bg-blue-600 text-white font-bold p-3 rounded-lg flex flex-col items-center justify-center shadow-sm min-w-[80px]">
+            <HiOutlineClock className="w-5 h-5 mb-1 opacity-80" />
+            <span className="text-lg">{formatTime(appointment.appointmentDate)}</span>
           </div>
-          <div>
-            <h4 className="font-bold text-gray-800">{appointment.title}</h4>
-            <p className="text-sm text-green-600 font-medium flex items-center gap-1 mt-1">
-              <HiOutlineCheckCircle />
-              Trạng thái: {appointment.status}
+
+          {/* Cột Thông tin */}
+          <div className="flex-1">
+            <h4 className="font-bold text-gray-900 text-lg mb-1">
+              {appointment.serviceType === 'MAINTENANCE' ? 'Bảo dưỡng định kỳ' : 
+               appointment.serviceType === 'GENERAL_REPAIR' ? 'Sửa chữa' : appointment.serviceType}
+            </h4>
+            <p className="text-sm text-blue-600 font-medium mb-2 flex items-center gap-1">
+               Trạm {stationName}
             </p>
+            {/* Ghi chú nếu có */}
+            {appointment.notes && (
+                <p className="text-sm text-gray-500 flex items-start gap-1.5 bg-gray-50 p-2 rounded mt-2">
+                    <HiOutlineAnnotation className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span className="italic">"{appointment.notes}"</span>
+                </p>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Footer Action Buttons */}
       <div className="flex bg-gray-50 border-t border-gray-200">
-        <button
-          onClick={() => navigate("/customer/booking")} // Cần cập nhật
-          className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
-        >
-          Dời lịch
-        </button>
-        <button
-          onClick={() => navigate("/customer/history")} // Cần cập nhật
-          className="flex-1 px-4 py-3 text-sm font-medium text-blue-600 hover:bg-gray-100 transition border-l border-gray-200"
-        >
-          Xem chi tiết
-        </button>
+        
       </div>
     </div>
   );
 };
 
-// Component Thẻ Thông tin Xe
+// Component Thẻ Thông tin Xe (GIỮ NGUYÊN)
 const VehicleInfoCard = ({ user, vehicle }) => {
-  const battery = vehicle?.batteryPercentage || 82; // Dùng 82% làm mặc định
+  if (!vehicle) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+        <p className="text-gray-500">Chưa có thông tin xe.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-5 md:p-6">
+    <div className="bg-white rounded-lg shadow-sm p-5 md:p-6 border border-gray-100">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        {/* Thông tin User */}
         <div className="flex items-center space-x-3">
           <img
-            src="https://i.pravatar.cc/80" // Placeholder avatar
+            src="https://i.pravatar.cc/80"
             alt="avatar"
-            className="w-12 h-12 rounded-full"
+            className="w-12 h-12 rounded-full border-2 border-gray-100"
           />
           <div>
             <h3 className="font-bold text-gray-900">
@@ -218,45 +258,53 @@ const VehicleInfoCard = ({ user, vehicle }) => {
             <p className="text-sm text-gray-500">{user?.email}</p>
           </div>
         </div>
-
-        {/* Hình ảnh xe (hiển thị trên desktop) */}
-        <div className="hidden md:block">
-          <img
-            src={vehicle?.imageUrl || "https://i.imgur.com/gQxK30P.png"} // Placeholder
-            alt={vehicle?.model || "Vinfast VF8"}
-            className="w-48 h-auto object-cover rounded"
-          />
+        <div className="mt-2 sm:mt-0">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            {vehicle.status || "Active"}
+          </span>
         </div>
       </div>
 
-      {/* Thông tin xe */}
-      <div className="mt-5 pt-5 border-t border-gray-200">
-        <h4 className="text-lg font-semibold text-gray-800">
-          {vehicle?.model || "Vinfast VF8"}
-        </h4>
-        <p className="text-sm text-gray-500 font-mono">
-          VIN: {vehicle?.vin || "WF1234567890XYZ"}
-        </p>
-
-        {/* Tình trạng pin */}
-        <div className="mt-4">
-          <div className="flex justify-between items-baseline">
-            <label className="text-sm font-medium text-gray-700">
-              Tình trạng pin
-            </label>
-            <span className="text-lg font-bold text-blue-600">{battery}%</span>
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h4 className="text-xl font-bold text-gray-800">
+              {vehicle.brand} {vehicle.model}
+            </h4>
+            <div className="flex items-center gap-2 mt-1">
+               <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-sm font-mono font-bold border border-gray-200">
+                  {vehicle.licensePlate}
+               </span>
+            </div>
           </div>
-          <ProgressBar value={battery} max={100} colorClass="bg-blue-600" />
         </div>
 
-        {/* Odometer */}
-        <div className="mt-4">
-          <label className="text-sm font-medium text-gray-700">
-            Odometer
-          </label>
-          <p className="text-2xl font-bold text-gray-900">
-            {(vehicle?.odometer || 15250).toLocaleString()} km
-          </p>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="bg-gray-50 p-3 rounded-lg">
+               <p className="text-xs text-gray-500 uppercase font-semibold">Odometer</p>
+               <p className="text-lg font-bold text-blue-600">
+                 {(vehicle.currentMileage || 0).toLocaleString()} km
+               </p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg">
+               <p className="text-xs text-gray-500 uppercase font-semibold">Năm SX</p>
+               <p className="text-lg font-bold text-gray-800">
+                 {vehicle.manufactureYear || "N/A"}
+               </p>
+            </div>
+            <div className="col-span-2 bg-gray-50 p-3 rounded-lg flex items-center gap-2">
+               <HiOutlineTag className="text-gray-400" />
+               <div>
+                 <p className="text-xs text-gray-500 uppercase font-semibold">Loại Pin</p>
+                 <p className="text-sm font-medium text-gray-800">
+                   {vehicle.batteryType || "Không xác định"}
+                 </p>
+               </div>
+            </div>
+        </div>
+        
+        <div className="mt-4 text-xs text-gray-400 text-right">
+           Ngày thêm: {new Date(vehicle.created_at).toLocaleDateString('vi-VN')}
         </div>
       </div>
     </div>
@@ -267,25 +315,41 @@ const VehicleInfoCard = ({ user, vehicle }) => {
 const CustomerDashboard = () => {
   const { user } = useContext(AuthContext);
   const [vehicles, setVehicles] = useState([]);
-  // const [centers, setCenters] = useState([]); // Không dùng trong UI mới
-  // const [notifications, setNotifications] = useState([]); // Không dùng trong UI mới
+  const [stationsMap, setStationsMap] = useState({});
+  // Đổi tên state để rõ nghĩa hơn: lưu danh sách thay vì 1 object
+  const [appointmentsList, setAppointmentsList] = useState([]); 
+  
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  // Dùng dữ liệu giả
-  const [reminders, setReminders] = useState(mockReminders);
-  const [upcomingAppointment, setUpcomingAppointment] =
-    useState(mockAppointment);
+  const [reminders] = useState(mockReminders);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("accessToken");
-        // Chỉ fetch dữ liệu xe, vì UI mới chỉ cần xe
-        const vehicleRes = await api.get("/vehicles/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const [vehicleRes, appointmentRes, stationRes] = await Promise.all([
+          api.get("/vehicles/me", { headers }),
+          api.get("/appointments/me", { headers }),
+          api.get("/stations", { headers })
+        ]);
+
         setVehicles(vehicleRes.data || []);
+        const sMap = {};
+        if (stationRes.data) {
+            stationRes.data.forEach(s => {
+                sMap[s.id] = s.name;
+            });
+        }
+        setStationsMap(sMap);
+        // Sắp xếp lịch hẹn: Mới nhất lên đầu hoặc Sắp tới lên đầu
+        const sortedAppointments = (appointmentRes.data || []).sort((a, b) => 
+            new Date(b.appointmentDate) - new Date(a.appointmentDate)
+        );
+        
+        setAppointmentsList(sortedAppointments);
+
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
       } finally {
@@ -297,42 +361,36 @@ const CustomerDashboard = () => {
 
   if (loading) {
     return (
-      <div className="text-center mt-20 text-gray-600 animate-pulse">
-        Đang tải dữ liệu...
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="text-gray-600 font-medium animate-pulse">Đang tải dữ liệu...</div>
       </div>
     );
   }
 
-  const vehicle = vehicles[0]; // Lấy xe đầu tiên
+  const vehicle = vehicles.length > 0 ? vehicles[0] : null;
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Bảng điều khiển</h1>
-          <p className="text-gray-600 mt-1">
-            Chào mừng trở lại, {user?.fullName || user?.username}!
-          </p>
+          <p className="text-gray-600 mt-1">Chào mừng trở lại, {user?.fullName || user?.username}!</p>
         </div>
         <button
-          onClick={() => navigate("/customer/booking")} // Đã cập nhật
+          onClick={() => navigate("/customer/booking")}
           className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold shadow-md hover:bg-blue-700 transition mt-4 sm:mt-0"
         >
-          <HiPlus className="w-5 h-5" />
-          Đặt Lịch Dịch Vụ Mới
+          <HiPlus className="w-5 h-5" /> Đặt Lịch Dịch Vụ Mới
         </button>
       </header>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
-        {/* Cột chính (bên trái) */}
+        
+        {/* CỘT TRÁI (Thông tin xe & Nhắc nhở) */}
         <div className="lg:col-span-3 space-y-6">
           <VehicleInfoCard user={user} vehicle={vehicle} />
-
-          <h2 className="text-xl font-bold text-gray-900 pt-2">
-            Nhắc nhở bảo dưỡng
-          </h2>
+          
+          <h2 className="text-xl font-bold text-gray-900 pt-2">Nhắc nhở bảo dưỡng</h2>
           <div className="space-y-4">
             {reminders.map((reminder) => (
               <ReminderCard key={reminder.id} {...reminder} />
@@ -340,19 +398,40 @@ const CustomerDashboard = () => {
           </div>
         </div>
 
-        {/* Cột phụ (bên phải) */}
-        <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-xl font-bold text-gray-900 lg:pt-2">
-            Lịch hẹn sắp tới
-          </h2>
-          {upcomingAppointment ? (
-            <AppointmentCard appointment={upcomingAppointment} />
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
-              Không có lịch hẹn nào sắp tới.
-            </div>
-          )}
+        {/* CỘT PHẢI (Danh sách Lịch hẹn) */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex justify-between items-center pt-2">
+              <h2 className="text-xl font-bold text-gray-900">Lịch sử đặt hẹn</h2>
+              <button onClick={() => navigate("/customer/history")} className="text-sm text-blue-600 hover:underline font-medium">Xem tất cả</button>
+          </div>
+          
+          {/* Danh sách cuộn dọc */}
+          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+            {appointmentsList.length > 0 ? (
+              appointmentsList.map((app) => (
+                <AppointmentCard 
+                    key={app.id} 
+                    appointment={app} 
+                    stationsMap={stationsMap} 
+                />
+              ))
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-gray-200">
+                <div className="inline-block p-3 rounded-full bg-gray-100 mb-3">
+                  <HiOutlineCalendar className="w-6 h-6 text-gray-400" />
+                </div>
+                <p className="text-gray-500 font-medium">Chưa có lịch hẹn nào.</p>
+                <button 
+                  onClick={() => navigate("/customer/booking")}
+                  className="mt-4 text-blue-600 text-sm font-semibold hover:underline"
+                >
+                  Đặt lịch ngay &rarr;
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+
       </div>
     </div>
   );

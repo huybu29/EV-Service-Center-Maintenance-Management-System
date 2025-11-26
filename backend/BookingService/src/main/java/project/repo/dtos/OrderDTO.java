@@ -19,7 +19,7 @@ public class OrderDTO {
     private Long technicianId;
 
     private Long vehicleId;
-
+    private Long customerId;
     private Double totalCost;
 
     private String status; // OrderStatus
@@ -29,5 +29,5 @@ public class OrderDTO {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private String serviceType;
-    private List<OrderChecklistItemDTO> checklistItems;
+
 }

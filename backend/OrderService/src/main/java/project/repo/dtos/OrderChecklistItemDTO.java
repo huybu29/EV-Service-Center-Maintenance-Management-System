@@ -3,6 +3,8 @@ package project.repo.dtos;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import project.repo.dtos.OrderPartDTO;
 
 @Getter
 @Setter
@@ -18,7 +20,7 @@ public class OrderChecklistItemDTO {
     private String status; // ChecklistStatus
 
     private String notes;
-
+    private List<OrderPartDTO> parts;
     private LocalDateTime startedAt;
 
     private LocalDateTime completedAt;

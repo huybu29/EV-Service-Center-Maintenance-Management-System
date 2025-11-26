@@ -1,45 +1,42 @@
-package project.repo.config; // (Đổi package cho đúng)
+package project.repo.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter; // ⭐️ Import
-import org.springframework.amqp.support.converter.MessageConverter; // ⭐️ Import
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
 
-    // Phải khớp 100% với Publisher (BookingService)
-    public static final String EXCHANGE_NAME = "booking_exchange";
+    // 1. Tên Exchange chung cho toàn hệ thống thông báo
+    public static final String EXCHANGE_NAME = "notification_exchange";
     
-    // Tên queue mới cho service này
+    // 2. Tên Queue của Service này
     public static final String QUEUE_NAME = "notification_queue";
     
-    // Routing key để lắng nghe (phải khớp)
-    public static final String ROUTING_KEY = "booking.created";
+    // 3. Routing Key: Dùng dấu # để nhận TẤT CẢ các loại thông báo
+    // (notification.booking, notification.order, notification.general...)
+    public static final String ROUTING_KEY = "notification.#"; 
 
-    // 1. Định nghĩa Exchange (giống hệt Publisher)
     @Bean
-    TopicExchange exchange() {
+    public TopicExchange exchange() {
         return new TopicExchange(EXCHANGE_NAME);
     }
 
-    // 2. Định nghĩa Queue (hàng đợi) mới
     @Bean
-    Queue queue() {
-        return new Queue(QUEUE_NAME, false);
+    public Queue queue() {
+        // true: Bền vững (Durable) - Không bị mất khi restart RabbitMQ
+        // Lưu ý: Nếu trước đó queue này là false, bạn phải vào RabbitMQ Manager xóa nó đi trước
+        return new Queue(QUEUE_NAME, true); 
     }
 
-    // 3. "Binding" (liên kết) Queue này với Exchange
     @Bean
-    Binding binding(Queue queue, TopicExchange exchange) {
+    public Binding binding(Queue queue, TopicExchange exchange) {
+        // Binding với key "notification.#" để hứng mọi tin nhắn bắt đầu bằng "notification."
         return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
     }
 
-    // 4. ⭐️ QUAN TRỌNG: Định nghĩa JSON Converter (để đọc tin nhắn)
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();

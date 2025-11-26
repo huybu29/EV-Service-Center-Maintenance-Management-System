@@ -2,7 +2,7 @@ package project.repo.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import java.util.List;
 import java.time.LocalDateTime;
 
 @Entity
@@ -34,6 +34,9 @@ public class OrderChecklistItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
+    
+    @OneToMany(mappedBy = "checklistItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderPart> parts;
 
     public enum ChecklistStatus {
         PENDING,

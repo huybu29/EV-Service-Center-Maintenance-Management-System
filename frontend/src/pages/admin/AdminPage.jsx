@@ -1,8 +1,12 @@
 // src/pages/admin/AdminDashboardModern.jsx
 import React from "react";
 import { Link, Outlet } from "react-router-dom";
-
+import  { AuthContext } from "../../services/AuthContext";
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 const AdminDashboard = () => {
+  const { user , logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
@@ -16,25 +20,25 @@ const AdminDashboard = () => {
             to="/admin/users"
             className="p-3 rounded-xl hover:bg-blue-100 transition flex items-center gap-2 font-medium text-gray-700"
           >
-            👤 Quản lý người dùng
+            Quản lý người dùng
           </Link>
           <Link
             to="/admin/stations"
             className="p-3 rounded-xl hover:bg-green-100 transition flex items-center gap-2 font-medium text-gray-700"
           >
-            🏭 Quản lý trạm
+             Quản lý trạm
           </Link>
           <Link
             to="/admin/bookings"
             className="p-3 rounded-xl hover:bg-yellow-100 transition flex items-center gap-2 font-medium text-gray-700"
           >
-            📅 Quản lý đặt lịch
+             Quản lý đặt lịch
           </Link>
           <Link
             to="/admin/vehicles"
             className="p-3 rounded-xl hover:bg-blue-100 transition flex items-center gap-2 font-medium text-gray-700"
           >
-            🚗 Quản lý phương tiện
+             Quản lý phương tiện
           </Link>
           <Link
             to="/admin/parts"
@@ -52,22 +56,26 @@ const AdminDashboard = () => {
             to="/admin/reports"
             className="p-3 rounded-xl hover:bg-red-100 transition flex items-center gap-2 font-medium text-gray-700"
           >
-            📊 Báo cáo & thống kê
+             Báo cáo & thống kê
           </Link>
+          <button
+                    onClick={() => {
+                      logout();
+                      navigate("/login");
+                    }}
+                    className="flex items-center w-full px-4 py-3 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
+                  >
+                    <span className="mr-3 text-lg text-gray-500">
+                     
+                    </span>
+                    Đăng xuất
+                  </button>
         </nav>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 p-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Xin chào, Admin 👋
-          </h1>
-          <p className="text-gray-600">
-            Bảng điều khiển tổng quan hệ thống EV Service Center.
-          </p>
-        </div>
+     
 
       
 

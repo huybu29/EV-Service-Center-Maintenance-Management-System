@@ -130,15 +130,15 @@ public class AppointmentController {
 
     return appointmentService.acceptBooking(id, staffId);
 }
-    // 🔹 8. Xóa cuộc hẹn (chỉ ADMIN)
-    @DeleteMapping("/{id}")
-    public void deleteAppointment(
-            @PathVariable Long id,
+    @GetMapping("/service-center/my-station")
+    public List<AppointmentDTO> getAppointmentsByServiceCenter(
+            @RequestHeader("X-User-Station-Id") Long stationId,
             @RequestHeader("X-User-Role") String role) {
-
-        checkRole(role, "ADMIN");
-        appointmentService.delete(id);
+                    
+        checkRole(role, "STAFF", "ADMIN");
+        return appointmentService.getAppointmentByServiceCenter(stationId);
     }
+    
     @PutMapping("/{id}/cancel")
     public AppointmentDTO cancelAppointment(
         @PathVariable Long id,

@@ -7,13 +7,13 @@ import { AuthProvider } from './services/AuthContext';
 import CustomerLayout from './components/NavBar';
 
 import AdminDashboard from './pages/admin/AdminPage';
-import StaffDashboard from './pages/staff/StaffPage';
+import StaffPage from './pages/staff/StaffPage';
 
 // Public Pages
 import Homepage from './pages/HomePage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
-import ChatPage from './pages/ChatPage';
+
 
 // Customer Pages
 import CustomerDashboard from './pages/customer/CustomerDashBoard';
@@ -29,14 +29,20 @@ import AdminVehicles from './pages/admin/AdVehicleManagement';
 import AdminStations from './pages/admin/AdCenterManagement';
 import AdminEditStation from './pages/admin/AdCenterEdit';
 import AdminParts from './pages/admin/AdPartManagement';
-
+import AdminFinancePage from './pages/admin/AdminDashboard';
 // Staff Pages
 import StaffCustomers from './pages/staff/StaffCustomers';
 import StaffServiceAppointments from './pages/staff/StaffServiceAppointments';
-import StaffMaintenanceProcess from './pages/staff/StaffMaintenanceProcess';
-import StaffParts from './pages/staff/StaffParts';
-import StaffVehicles from './pages/staff/StaffVehicles';
 
+import StaffParts from './pages/staff/StaffParts';
+import StaffServiceTicketDetail from './pages/staff/StaffOrder';
+import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffPaymentPage from './pages/staff/StaffPayment';
+import TechnicianPage from './pages/technician/TechnicianPage';
+import TechnicianDashboard from './pages/technician/TechnicianDashboard';
+import TechnicianMaintenanceProcess from './pages/technician/TechnicianMaintenanceProcess';
+import TechnicianChecklist from './pages/technician/TechnicianChecklist';
+import PartCard from './pages/AI';
 function App() {
   return (
     <AuthProvider>
@@ -44,11 +50,12 @@ function App() {
          
           <Routes>
             {/* Public Routes */}
+            <Route path="/ai" element={<PartCard/>}/>
             <Route path="/" element={<Homepage/>}/>
             <Route path="/login" element={<LoginPage/>}/>
             <Route path="/register" element={<RegisterPage/>}/>
-            <Route path="/chat" element={<ChatPage/>}/>
-
+          
+            <Route path="/unauthorized" element={<div>Bạn không có quyền truy cập!</div>} />
             {/* === 3. CUSTOMER LAYOUT ROUTE === */}
             <Route path="/customer" element={<CustomerLayout />}>
               {/* Ánh xạ với link "Trang chủ" trong layout */}
@@ -72,7 +79,7 @@ function App() {
             <Route path="/booking" element={<Navigate replace to="/customer/booking" />} />
             <Route path="/payment" element={<Navigate replace to="/customer/history" />} />
 
-            {/* === 5. ADMIN LAYOUT (Đã sửa path) === */}
+            
             <Route path="/admin" element={<AdminDashboard/>}>
               <Route path="users" element={<AdminUsers/>}/>
               <Route path="vehicles" element={<AdminVehicles/>}/>
@@ -80,16 +87,25 @@ function App() {
               <Route path="bookings" element={<AdminAppointments/>}/>
               <Route path="stations" element={<AdminStations/>}/>
               <Route path="stations/:id" element={<AdminEditStation/>}/>
-              <Route path="parts" element={<AdminParts/>}/>         
+              <Route path="parts" element={<AdminParts/>}/>
+                 <Route path="reports" element={<AdminFinancePage/>}/>      
             </Route>
             
             {/* === 6. STAFF LAYOUT (Đã sửa path) === */}
-            <Route path="/staff" element={<StaffDashboard/>}>
+            <Route path="/staff" element={<StaffPage/>}>
               <Route path="customers" element={<StaffCustomers/>}/>
               <Route path="appointments" element={<StaffServiceAppointments/>}/>
-              <Route path="maintenance" element={<StaffMaintenanceProcess/>}/>
+              <Route path="maintenance" element={<TechnicianMaintenanceProcess/>}/>
               <Route path="parts" element={<StaffParts/>}/>
-              <Route path="vehicles" element={<StaffVehicles/>}/>
+              <Route path="order/:id" element={<StaffServiceTicketDetail/>}/>
+              <Route path="dashboard" element={<StaffDashboard/>}/>
+              <Route path="payments/:id" element={<StaffPaymentPage/>}/>
+            </Route>
+            {/* === 7. TECHNICIAN LAYOUT === */}
+            <Route path="/technician" element={<TechnicianPage />}>
+              <Route path="dashboard" element={<TechnicianDashboard />} />
+              <Route path="maintenance" element={<TechnicianMaintenanceProcess />} />
+              <Route path="checklist/:id" element={<TechnicianChecklist />} />
             </Route>
           </Routes>
       </Router>

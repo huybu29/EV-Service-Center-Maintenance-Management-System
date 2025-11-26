@@ -14,7 +14,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
   
     List<Order> findByTechnicianId(Long technicianId);
-
+    
  
     List<Order> findByStatus(Order.OrderStatus status);
 }

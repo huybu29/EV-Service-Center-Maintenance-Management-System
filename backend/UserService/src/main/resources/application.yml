@@ -10,7 +10,13 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
-    
+  cache:
+    type: redis 
+  data:
+    redis:
+      host: redis-16775.c83.us-east-1-2.ec2.cloud.redislabs.com
+      port: 16775
+      password: G5dufRIXPcP8vuAfJPc1CgCTGUlbjVbm
 eureka:
   client:
     service-url:

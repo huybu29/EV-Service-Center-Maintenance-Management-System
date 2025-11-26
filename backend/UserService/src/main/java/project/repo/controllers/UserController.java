@@ -63,12 +63,12 @@ public ResponseEntity<UserDTO> createCustomerAccount(@RequestBody UserDTO custom
             @PathVariable Long id) {
 
         // STAFF hoặc CUSTOMER chỉ được xem thông tin của chính mình
-        if ("ROLE_CUSTOMER".equalsIgnoreCase(role) || "ROLE_STAFF".equalsIgnoreCase(role)) {
+        if ("ROLE_CUSTOMER".equalsIgnoreCase(role)) {
             if (!currentUserId.equals(id)) {
                 throw new RuntimeException("Access denied: cannot view other users' info");
             }
         } else {
-            checkRole(role, "ADMIN");
+            checkRole(role, "ADMIN", "STAFF");
         }
 
         return ResponseEntity.ok(userService.getUserById(id));
@@ -109,7 +109,19 @@ public UserDTO createUser(
         }
         return ResponseEntity.ok(userService.updateUser(id, dto));
     }
+    @PutMapping("/{id}/staff-status")
+    public ResponseEntity<Void> updateStaffStatus(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable Long id,
+            @RequestParam String status) { // status: AVAILABLE, BUSY, OFFLINE
 
+       
+        checkRole(role, "ADMIN", "STAFF");
+
+        userService.updateStaffStatus(id, status);
+        
+        return ResponseEntity.ok().build();
+    }
     // 🟩 6️⃣ Xóa người dùng (chỉ ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(
