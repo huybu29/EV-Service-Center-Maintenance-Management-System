@@ -1,10 +1,10 @@
+FROM eclipse-temurin:17
 
-FROM eclipse-temurin:17-jdk-alpine
+# Install curl (optional)
+RUN apt-get update && apt-get install -y curl && apt-get clean
 
 WORKDIR /app
 
 COPY target/repo-0.0.1-SNAPSHOT.jar app.jar
-
-EXPOSE 8888
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

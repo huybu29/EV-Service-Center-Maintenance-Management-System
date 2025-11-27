@@ -3,8 +3,6 @@ server:
 spring:
   application:
     name: communication-service
-  config:
-    import: "optional:configserver:http://localhost:8888"
   rabbitmq:
     host: localhost
     port: 5672

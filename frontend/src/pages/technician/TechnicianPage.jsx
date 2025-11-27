@@ -48,13 +48,6 @@ const TechnicianPage = () => {
           </Link>
 
         
-          <Link
-            to="/technician/parts"
-            className="p-3 rounded-xl hover:bg-blue-50 text-gray-600 hover:text-blue-700 transition flex items-center gap-3 font-medium"
-          >
-            <FiBox size={20} />
-            Tra cứu & Yêu cầu Phụ tùng
-          </Link>
         </nav>
 
         {/* Footer Sidebar */}

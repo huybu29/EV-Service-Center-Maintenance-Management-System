@@ -4,8 +4,7 @@ server:
 spring:
   application:
     name: center-service
-  config:
-    import: "optional:configserver:http://localhost:8888"
+  
   cloud:
     discovery:
       enabled: true

@@ -1,0 +1,12 @@
+-- Tạo tất cả Database cần thiết
+CREATE DATABASE IF NOT EXISTS user_db;
+CREATE DATABASE IF NOT EXISTS booking_db;
+CREATE DATABASE IF NOT EXISTS center_db;
+CREATE DATABASE IF NOT EXISTS order_db;
+CREATE DATABASE IF NOT EXISTS payment_db;
+CREATE DATABASE IF NOT EXISTS vehicle_part_db;
+CREATE DATABASE IF NOT EXISTS communication_db;
+
+-- Cấp quyền truy cập
+GRANT ALL PRIVILEGES ON *.* TO 'user'@'%';
+FLUSH PRIVILEGES;
