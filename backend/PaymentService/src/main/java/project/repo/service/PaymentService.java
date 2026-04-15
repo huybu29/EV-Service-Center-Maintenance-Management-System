@@ -40,13 +40,13 @@ public class PaymentService {
         }
 
 
-        AppointmentDTO booking = bookingClient.getAppointmentById(bookingId);
+        AppointmentDTO booking = bookingClient.getAppointmentById(bookingId, "ROLE_STAFF", userId);
         if (booking == null) {
             throw new IllegalArgumentException("❌ Booking không tồn tại.");
         }
-        if (!booking.getCustomerId().equals(userId)) {
+       /*if (!booking.getCustomerId().equals(userId)) {
             throw new SecurityException("❌ Bạn không thể thanh toán cho booking của người khác.");
-        }
+        }*/
 
       
         if (!"COMPLETED".equalsIgnoreCase(booking.getStatus())) {

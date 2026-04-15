@@ -1,18 +1,20 @@
 package project.repo.config;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
+import java.io.IOException;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import java.io.IOException;
+
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 
 @Configuration
 public class FirebaseConfig {
     @Bean
     public FirebaseApp firebaseApp() throws IOException {
-        ClassPathResource serviceAccount = new ClassPathResource("evmproject-3a874-firebase-adminsdk-fbsvc-0664c5e148.json");
+        ClassPathResource serviceAccount = new ClassPathResource("evmproject-3a874-firebase-adminsdk-fbsvc-c4c28bc22a.json");
 
         FirebaseOptions options = new FirebaseOptions.Builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount.getInputStream()))

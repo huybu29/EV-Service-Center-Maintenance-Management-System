@@ -78,6 +78,7 @@ const TechnicianMaintenanceProcess = () => {
         headers: { Authorization: `Bearer ${token}` },
         params: { status: "IN_PROGRESS" }
       });
+      
       alert("🚀 Đã bắt đầu công việc!");
       
       const updatedTasks = tasks.map(t => t.id === selectedTask.id ? { ...t, status: "in_progress" } : t);

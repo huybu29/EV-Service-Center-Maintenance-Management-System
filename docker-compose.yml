@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # ====================================================
-  # 1. INFRASTRUCTURE (HẠ TẦNG) - CHẠY ĐẦU TIÊN
+  # 1. INFRASTRUCTURE (HẠ TẦNG)
   # ====================================================
   
   # Eureka Server: Trái tim của hệ thống
@@ -14,11 +14,11 @@ services:
     networks:
       - micro_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8761/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s # Cho phép khởi động chậm 30s đầu
+      start_period: 30s 
 
   # MySQL: Chứa dữ liệu
   mysql:
@@ -84,201 +84,7 @@ services:
     networks:
       - micro_net
 
-  # ====================================================
-  # 2. MICROSERVICES (BACKEND) - CHẠY KHI HẠ TẦNG KHỎE
-  # ====================================================
-
-  user-service:
-    build: ./backend/userService
-    container_name: micro_user
-    restart: on-failure
-    networks:
-      - micro_net
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: 8085
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/user_db?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-
-  booking-service:
-    build: ./backend/bookingService
-    container_name: micro_booking
-    restart: on-failure
-    networks:
-      - micro_net
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: 8081
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/booking_db?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_RABBITMQ_HOST: rabbitmq
-
-  center-service:
-    build: ./backend/centerService
-    container_name: micro_center
-    restart: on-failure
-    networks:
-      - micro_net
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: 8082
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/center_db?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-
-  order-service:
-    build: ./backend/orderService
-    container_name: micro_order
-    restart: on-failure
-    networks:
-      - micro_net
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: 8083
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/order_db?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_RABBITMQ_HOST: rabbitmq
-
-  payment-service:
-    build: ./backend/paymentService
-    container_name: micro_payment
-    restart: on-failure
-    networks:
-      - micro_net
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: 8084
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/payment_db?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_RABBITMQ_HOST: rabbitmq
-
-  vehicle-part-service:
-    build: ./backend/Vehicle-PartService
-    container_name: micro_vehicle_part
-    restart: on-failure
-    networks:
-      - micro_net
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: 8086
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vehicle_part_db?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_CLOUD_CONFIG_ENABLED: "false" # Tắt Config Server để tránh lỗi
-
-  communication-service:
-    build: ./backend/CommunicationService
-    container_name: micro_communication
-    restart: on-failure
-    networks:
-      - micro_net
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    volumes:
-      - ./firebase-service-account.json:/app/firebase-service-account.json
-    environment:
-      SERVER_PORT: 8089
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/communication_db?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_RABBITMQ_HOST: rabbitmq
-      GOOGLE_APPLICATION_CREDENTIALS: /app/firebase-service-account.json
-
-  # ====================================================
-  # 3. API GATEWAY - CHẠY SAU KHI SERVICES CON ĐÃ LÊN
-  # ====================================================
-  api-gateway:
-    build: ./backend/api-gateway
-    container_name: micro_gateway
-    ports:
-      - "8067:8067"
-    networks:
-      - micro_net
-    environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      # Gateway sẽ đợi các service này được TẠO xong mới chạy (để tránh lỗi định tuyến ban đầu)
-      user-service:
-        condition: service_started
-      booking-service:
-        condition: service_started
-      order-service:
-        condition: service_started
-      payment-service:
-        condition: service_started
-      center-service:
-        condition: service_started
-      vehicle-part-service:
-        condition: service_started
-      communication-service:
-        condition: service_started
-
-  # ====================================================
-  # 4. FRONTEND - CHẠY CUỐI CÙNG
-  # ====================================================
-  frontend:
-    build: ./frontend
-    container_name: micro_frontend
-    restart: always
-    ports:
-      - "3000:80"
-    networks:
-      - micro_net
-    depends_on:
-      - api-gateway
-
+# BẮT BUỘC PHẢI CÓ PHẦN NÀY ĐỂ DOCKER TẠO MẠNG VÀ Ổ ĐĨA
 volumes:
   mysql_data:
   nifi_data:

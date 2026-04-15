@@ -10,8 +10,7 @@ import project.repo.dtos.UserDTO;
 import project.repo.entity.User;
 import project.repo.mapper.UserMapper;
 import project.repo.repository.UserRepository;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,7 +28,7 @@ public class UserService implements UserDetailsService {
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
-    @Cacheable(value = "users", key = "#id")
+   
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -63,7 +62,7 @@ public class UserService implements UserDetailsService {
         User saved = userRepository.save(user);
         return userMapper.toDto(saved);
     }
-    @CacheEvict(value = "users", key = "#id")
+  
     public UserDTO updateUser(Long id, UserDTO dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));

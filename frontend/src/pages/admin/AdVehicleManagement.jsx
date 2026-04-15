@@ -15,6 +15,7 @@ const AdminVehicles = () => {
     currentMileage: "",
     batteryType: "",
     customerId: "",
+    vin:"",
     status: "ACTIVE",
   });
 
@@ -76,6 +77,7 @@ const AdminVehicles = () => {
         currentMileage: "",
         batteryType: "",
         customerId: "",
+        vin: "",
         status: "ACTIVE",
       });
       fetchVehicles();
@@ -123,6 +125,7 @@ const AdminVehicles = () => {
               <th className="px-4 py-2">Battery</th>
               <th className="px-4 py-2">Trạng thái</th>
               <th className="px-4 py-2 text-center">Thao tác</th>
+              <th className="px-4 py-2">VIN</th>
             </tr>
           </thead>
           <tbody>
@@ -137,6 +140,7 @@ const AdminVehicles = () => {
                   <td className="px-4 py-2">{v.currentMileage || 0}</td>
                   <td className="px-4 py-2">{v.batteryType}</td>
                   <td className="px-4 py-2">{v.status}</td>
+                  <td className="px-4 py-2">{v.vin}</td>
                   <td className="px-4 py-2 text-center space-x-2">
                     <button
                       onClick={() => handleEdit(v)}
@@ -223,6 +227,14 @@ const AdminVehicles = () => {
                 onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
                 className="border px-3 py-2 rounded"
               />
+              <input
+                type="text"
+                placeholder="VIN"
+                value={formData.vin}
+                onChange={(e) => setFormData({ ...formData, vin: e.target.value })}
+                className="border px-3 py-2 rounded"
+              />
+
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}

@@ -123,6 +123,7 @@ const PaymentPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setPayments(res.data || []);
+        console.log("Lịch sử thanh toán đã tải:", res.data);
       } catch (err) {
         console.error("Lỗi tải dữ liệu:", err);
       } finally {

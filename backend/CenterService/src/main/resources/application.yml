@@ -4,34 +4,33 @@ server:
 spring:
   application:
     name: center-service
-  
+  datasource:
+    url: jdbc:mysql://localhost:3306/center_db
+    username: root
+    password: rootpassword
+    driver-class-name: com.mysql.cj.jdbc.Driver
   cloud:
     discovery:
       enabled: true
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
+    config: 
+      enabled: false
   cache:
     type: redis 
-  data:
-    redis:
-      host: redis-16775.c83.us-east-1-2.ec2.cloud.redislabs.com
-      port: 16775
-      password: G5dufRIXPcP8vuAfJPc1CgCTGUlbjVbm
+  
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update  
+    show-sql: true
   main:
     allow-bean-definition-overriding: true
 
 eureka:
   client:
-    register-with-eureka: true      # 🔹 Bật đăng ký service
-    fetch-registry: true            # 🔹 Cho phép lấy thông tin từ Eureka
+    register-with-eureka: true      
+    fetch-registry: true           
     service-url:
       defaultZone: http://localhost:8761/eureka/
   instance:
     hostname: center-service      
     prefer-ip-address: true   
+  

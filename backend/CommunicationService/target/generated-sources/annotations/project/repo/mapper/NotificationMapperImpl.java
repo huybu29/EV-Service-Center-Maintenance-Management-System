@@ -7,8 +7,8 @@ import project.repo.entity.Notification;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-11-27T07:14:02+0700",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.16 (Oracle Corporation)"
+    date = "2026-04-15T23:07:24+0700",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
 )
 @Component
 public class NotificationMapperImpl implements NotificationMapper {

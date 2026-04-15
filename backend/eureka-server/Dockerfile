@@ -17,7 +17,7 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-p.jar
+COPY --from=build /app/target/*.jar app.jar
 
 
 EXPOSE 8761

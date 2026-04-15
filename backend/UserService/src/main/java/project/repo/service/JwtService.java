@@ -28,7 +28,7 @@ public class JwtService {
     // 🔹 Tạo token (lưu username + role + userId)
     public String generateToken(User user) {
         long now = System.currentTimeMillis();
-
+        System.out.println("Generating JWT for user: " + user.getUsername() + ", role: " + user.getRole() + ", userId: " + user.getId());
         return Jwts.builder()
                 .setSubject(user.getUsername())
                 .claim("role", user.getRole())

@@ -60,7 +60,7 @@ protected void doFilterInternal(HttpServletRequest request,
 
             // ✅ In ra role để debug
             System.out.println("JWT Extracted Role: " + role);
-
+            
             // ✅ Gán quyền xác thực vào context
             SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" +role);
             UsernamePasswordAuthenticationToken authToken =

@@ -31,3 +31,4 @@ build/
 
 ### VS Code ###
 .vscode/
+backend/CommunicationService/src/main/resources/evmproject-3a874-firebase-adminsdk-fbsvc-c4c28bc22a.json

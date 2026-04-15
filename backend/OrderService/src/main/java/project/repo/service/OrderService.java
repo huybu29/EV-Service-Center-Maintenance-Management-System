@@ -15,6 +15,9 @@ import project.repo.dtos.OrderDTO;
 import project.repo.dtos.OrderPartDTO;
 import project.repo.dtos.PartsDTO;
 import project.repo.dtos.PaymentDto;
+import project.repo.dtos.AppointmentDTO;
+import project.repo.clients.BookingClient;
+
 import project.repo.entity.Order;
 import project.repo.entity.OrderChecklistItem;
 import project.repo.entity.OrderPart;
@@ -42,6 +45,7 @@ public class OrderService {
     private final VehicleClient vehicleClient;
     private final PartClient partClient;
     private final PaymentClient paymentClient;
+    private final BookingClient bookingClient;
     private final RabbitTemplate rabbitTemplate;
 
     public OrderDTO createOrderFromAppointment(OrderDTO dto) {
@@ -147,14 +151,16 @@ public class OrderService {
             order.setStatus(newStatus);
             syncTechnicianStatus(order);
             
-            if (newStatus == Order.OrderStatus.IN_PROGRESS && order.getStartDate() == null) {
+            if (newStatus == Order.OrderStatus.IN_PROGRESS) {
                 order.setStartDate(java.time.LocalDateTime.now());
+                bookingClient.updateAppointmentStatus(order.getAppointmentId(), "IN_PROGRESS", "ROLE_STAFF");
                 sendNotification(
                     order.getCustomerId(),
                     "Xe đang được sửa chữa 🚗",
                     "KTV đang kiểm tra và xử lý xe của bạn (Đơn #" + order.getId() + ")",
                     "ORDER_IN_PROGRESS"
                 );
+                
             }
             
             if (newStatus == Order.OrderStatus.COMPLETED) {
@@ -178,7 +184,8 @@ public class OrderService {
                     "Quy trình bảo dưỡng hoàn tất. Vui lòng thanh toán và nhận xe.",
                     "ORDER_COMPLETED"
                 );    
-                // Gọi Payment
+                bookingClient.updateAppointmentStatus(order.getAppointmentId(), "COMPLETED", "ROLE_STAFF");
+                
                 try {
                     System.out.println("6. Đang gọi sang Payment Service (Port 8084)...");
                     createPaymentForOrder(order, finalTotal);
@@ -196,7 +203,7 @@ public class OrderService {
         return enrichOrderDTO(saved);
     }
 
-    // 🔹 Hàm phụ: Gọi Payment Client
+   
     private void createPaymentForOrder(Order order, double amount) {
         PaymentDto paymentDto = PaymentDto.builder()
                 .bookingID(order.getAppointmentId())

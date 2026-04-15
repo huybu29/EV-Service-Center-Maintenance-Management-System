@@ -1,5 +1,6 @@
 package project.repo.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +8,7 @@ import project.repo.dtos.PaymentDto;
 import project.repo.service.PaymentService;
 import project.repo.clients.BookingClient;
 import java.util.List;
-import org.springframework.http.ResponseEntity;
+
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
@@ -16,109 +17,81 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final BookingClient bookingClient;
-    // 🔹 Helper kiểm tra role
-    private void checkRole(String roleHeader, String... allowedRoles) {
-        for (String role : allowedRoles) {
-            if (roleHeader != null && roleHeader.equalsIgnoreCase("ROLE_" + role)) {
-                return;
-            }
+
+    private void verifyOwnership(String role, Long currentUserId, Long targetUserId) {
+        if (role != null && role.toUpperCase().contains("CUSTOMER") && !currentUserId.equals(targetUserId)) {
+            throw new RuntimeException("Access denied: cannot access others' payments");
         }
-        throw new RuntimeException("Access denied: required role " + String.join(", ", allowedRoles));
     }
 
-    // 🔹 Lấy tất cả thanh toán (STAFF, ADMIN)
     @GetMapping("/")
-    public List<PaymentDto> getAllPayment(@RequestHeader("X-User-Role") String role) {
-        checkRole(role, "STAFF", "ADMIN");
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public List<PaymentDto> getAllPayment() {
         return paymentService.getAllPayments();
     }
 
-    // 🔹 Lấy thanh toán theo userID (CUSTOMER chỉ được xem thanh toán của mình, STAFF/ADMIN xem tất cả)
     @GetMapping("/{userID}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN')")
     public List<PaymentDto> getPaymentByUserID(
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") Long currentUserId,
             @PathVariable Long userID) {
 
-        if ("ROLE_CUSTOMER".equalsIgnoreCase(role)) {
-            if (!currentUserId.equals(userID)) {
-                throw new RuntimeException("Access denied: CUSTOMER can only view their own payments");
-            }
-        } else {
-            checkRole(role, "STAFF", "ADMIN");
-        }
-
+        verifyOwnership(role, currentUserId, userID);
         return paymentService.getPaymentByUserId(userID);
     }
 
-    // 🔹 Tạo thanh toán (CUSTOMER, STAFF, ADMIN)
     @PostMapping("/")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'TECHNICIAN')")
     public PaymentDto createPayment(
-            @RequestHeader("X-User-Role") String role,
-             @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Id") Long userId,
             @RequestBody PaymentDto dto) {
 
-        checkRole(role, "CUSTOMER");
         return paymentService.createPayment(userId, dto);
     }
-     @GetMapping("/me")
+
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN')")
     public List<PaymentDto> getMyPayment(
-            @RequestHeader("X-User-Role") String role,
-            @RequestHeader("X-User-Id") Long currentUserId
-           ) {
+            @RequestHeader("X-User-Id") Long currentUserId) {
 
         return paymentService.getPaymentByUserId(currentUserId);
-   }
-   @PutMapping("/{paymentId}")
-public PaymentDto updatePayment(
-        @RequestHeader("X-User-Id") Long userId,
-        @RequestHeader("X-User-Role") String role,
-        @PathVariable Long paymentId,
-        @RequestBody PaymentDto dto) {
-
-   PaymentDto existing = paymentService.getById(paymentId);
-    if (existing == null) {
-        throw new RuntimeException("Payment không tồn tại.");
     }
 
-
-    if ("COMPLETED".equalsIgnoreCase(existing.getStatus())) {
-        throw new IllegalStateException("Không thể chỉnh sửa Payment đã thanh toán.");
-    }
-
-  
-    if ("ROLE_CUSTOMER".equalsIgnoreCase(role)) {
-        if (!existing.getUserID().equals(userId)) {
-            throw new RuntimeException("Bạn không thể chỉnh sửa Payment của người khác.");
-        }
-    } 
-    
-    else if (!"ROLE_ADMIN".equalsIgnoreCase(role) && !"ROLE_STAFF".equalsIgnoreCase(role)) {
-        throw new RuntimeException("Không có quyền thực hiện thao tác này.");
-    }
-
-    if (dto.getAmount() != null && dto.getAmount() <= 0) {
-        throw new IllegalArgumentException("Số tiền phải lớn hơn 0.");
-    }
-
-    // ✅ Cho phép cập nhật
-    return paymentService.updatePayment(paymentId, dto);
-}
-
-    
-    @DeleteMapping("/{paymentId}")
-    public void deletePayment(
+    @PutMapping("/{paymentId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN')")
+    public PaymentDto updatePayment(
+            @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role,
-            @PathVariable Long paymentId) {
+            @PathVariable Long paymentId,
+            @RequestBody PaymentDto dto) {
 
-        checkRole(role, "ADMIN");
+        PaymentDto existing = paymentService.getById(paymentId);
+        if (existing == null) {
+            throw new RuntimeException("Payment không tồn tại.");
+        }
+
+        if ("COMPLETED".equalsIgnoreCase(existing.getStatus())) {
+            throw new IllegalStateException("Không thể chỉnh sửa Payment đã thanh toán.");
+        }
+
+        verifyOwnership(role, userId, existing.getUserID());
+
+        if (dto.getAmount() != null && dto.getAmount() <= 0) {
+            throw new IllegalArgumentException("Số tiền phải lớn hơn 0.");
+        }
+
+        return paymentService.updatePayment(paymentId, dto);
+    }
+
+    @DeleteMapping("/{paymentId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deletePayment(@PathVariable Long paymentId) {
         paymentService.deletePayment(paymentId);
     }
+
     @GetMapping("/by-booking/{bookingID}")
     public PaymentDto getPaymentByBookingID(@PathVariable Long bookingID) {
-      
         return paymentService.getByBookingID(bookingID);
     }
 }
-
-

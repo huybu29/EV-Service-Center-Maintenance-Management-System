@@ -1,6 +1,7 @@
 package project.repo.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import project.repo.dtos.VehicleDTO;
 import project.repo.service.VehicleService;
@@ -14,107 +15,74 @@ public class VehicleController {
 
     private final VehicleService vehicleService;
 
-    // 🔹 Helper kiểm tra role
-    private void checkRole(String roleHeader, String... allowedRoles) {
-        for (String role : allowedRoles) {
-            if (roleHeader != null && roleHeader.equalsIgnoreCase("ROLE_" + role)) {
-                return;
-            }
+    private void verifyOwnership(String role, Long currentUserId, Long targetUserId) {
+        if (role != null && role.toUpperCase().contains("CUSTOMER") && !currentUserId.equals(targetUserId)) {
+            throw new RuntimeException("Access denied: cannot access other customers' vehicles");
         }
-        throw new RuntimeException("Access denied: required role " + String.join(", ", allowedRoles));
     }
 
-    // 🔹 Tạo xe mới (chỉ ADMIN)
     @PostMapping
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'STAFF')")
     public VehicleDTO create(
             @RequestHeader("X-User-Role") String role,
-             @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Id") Long userId,
             @RequestBody VehicleDTO dto) {
 
-        if ("ROLE_CUSTOMER".equalsIgnoreCase(role)) {
-            // Nếu là khách hàng → tự động gán ID người dùng vào customerId
+        if (role != null && role.toUpperCase().contains("CUSTOMER")) {
             dto.setCustomerId(userId);
-        } else {
-            // ADMIN hoặc STAFF thì giữ nguyên (cho phép chỉ định customerId)
-            checkRole(role, "ADMIN", "STAFF");
         }
         return vehicleService.create(dto);
     }
 
-    // 🔹 Lấy tất cả xe (STAFF, ADMIN)
     @GetMapping
-    public List<VehicleDTO> getAll(@RequestHeader("X-User-Role") String role) {
-        checkRole(role, "STAFF", "ADMIN");
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public List<VehicleDTO> getAll() {
         return vehicleService.getAll();
     }
 
-
- 
-
-
-
-
-    // 🔹 Lấy xe theo ID (STAFF, ADMIN, CUSTOMER – CUSTOMER chỉ xem xe của mình)
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN', 'TECHNICIAN')")
     public VehicleDTO getById(
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id) {
 
-        if ("ROLE_CUSTOMER".equalsIgnoreCase(role)) {
-            VehicleDTO vehicles = vehicleService.getById(id);
-            if (!vehicles.getCustomerId().equals(userId)) {
-                throw new RuntimeException("Access denied: cannot view other customers' vehicles");
-            }
-            return vehicles;
-        } else {
-            checkRole(role, "STAFF", "ADMIN","TECHNICIAN");
-            return vehicleService.getById(id);
-        }
+        VehicleDTO vehicle = vehicleService.getById(id);
+        verifyOwnership(role, userId, vehicle.getCustomerId());
+        return vehicle;
     }
 
-    // 🔹 Lấy xe theo customerId (CUSTOMER chỉ xem xe của chính mình)
     @GetMapping("/customer/{customerId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN')")
     public List<VehicleDTO> getByCustomer(
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long customerId) {
 
-        if ("ROLE_CUSTOMER".equalsIgnoreCase(role) && !userId.equals(customerId)) {
-            throw new RuntimeException("Access denied: cannot view other customers' vehicles");
-        } else {
-            checkRole(role, "STAFF", "ADMIN", "CUSTOMER");
-        }
-
+        verifyOwnership(role, userId, customerId);
         return vehicleService.getByCustomer(customerId);
     }
 
-    // 🔹 Cập nhật xe (STAFF, ADMIN)
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public VehicleDTO update(
-            @RequestHeader("X-User-Role") String role,
             @PathVariable Long id,
             @RequestBody VehicleDTO dto) {
 
-        checkRole(role, "STAFF", "ADMIN");
         return vehicleService.update(id, dto);
     }
 
-    // 🔹 Xóa xe (chỉ ADMIN)
     @DeleteMapping("/{id}")
-    public void delete(
-            @RequestHeader("X-User-Role") String role,
-            @PathVariable Long id) {
-
-        checkRole(role, "ADMIN");
+    @PreAuthorize("hasRole('ADMIN')")
+    public void delete(@PathVariable Long id) {
         vehicleService.delete(id);
     }
-    @GetMapping("/me")
-    public List<VehicleDTO> getMyVehicles(
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-User-Role") String role) {
 
-        checkRole(role, "CUSTOMER", "ADMIN", "STAFF");
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'STAFF')")
+    public List<VehicleDTO> getMyVehicles(
+            @RequestHeader("X-User-Id") Long userId) {
+
         return vehicleService.getByCustomer(userId);
     }
 }

@@ -3,18 +3,22 @@ server:
 spring:
   application:
     name: order-service
-  
   datasource:
-    url: jdbc:h2:mem:testdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:mysql://localhost:3306/order_db?useSSL=false&allowPublicKeyRetrieval=true
+    driverClassName: com.mysql.cj.jdbc.Driver
+    username: root
+    password: rootpassword
+  jpa:
+    hibernate:
+      ddl-auto: update  
+    show-sql: true
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
-    
+  config:
+    enabled: false 
 eureka:
   client:
     service-url:
