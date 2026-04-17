@@ -119,7 +119,7 @@ const PaymentPage = () => {
     const fetchPayments = async () => {
       try {
         const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
-        const res = await api.get("/payments/me", {
+        const res = await api.get(`/payments/${user?.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setPayments(res.data || []);

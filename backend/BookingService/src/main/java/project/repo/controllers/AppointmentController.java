@@ -73,13 +73,7 @@ public class AppointmentController {
         return appointmentService.getAppointmentByCustomer(customerId);
     }
 
-    @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN')")
-    public List<AppointmentDTO> getMyAppointments(
-            @RequestHeader("X-User-Id") Long userId) {
-
-        return appointmentService.getAppointmentByCustomer(userId);
-    }
+    
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN')")
@@ -102,11 +96,11 @@ public class AppointmentController {
         return appointmentService.updateAppointment(dto);
     }
 
-    @PutMapping("/{id}/{status}")
+    @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('STAFF', 'TECHNICIAN')")
     public AppointmentDTO updateAppointmentStatus(
             @PathVariable Long id,
-            @PathVariable String status) {
+            @RequestBody String status) {
             
         return appointmentService.updateAppointmentStatus(id, status);
     }

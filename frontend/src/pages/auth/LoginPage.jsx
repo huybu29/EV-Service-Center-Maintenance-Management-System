@@ -46,7 +46,7 @@ const LoginPage = () => {
         throw new Error("Không nhận được token");
       }
 
-      const userRes = await api.get("users/me", {
+      const userRes = await api.get(`users/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = userRes.data;

@@ -165,7 +165,7 @@ const BookingPage = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         const [vehiclesRes, stationsRes] = await Promise.all([
-          api.get(`/vehicles/me`, { headers }),
+          api.get(`/vehicles/${user?.id}`, { headers }),
           api.get(`/stations`, { headers }), // Đảm bảo API này trả về danh sách Service Center
         ]);
 

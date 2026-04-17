@@ -78,11 +78,5 @@ public class VehicleController {
         vehicleService.delete(id);
     }
 
-    @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'STAFF')")
-    public List<VehicleDTO> getMyVehicles(
-            @RequestHeader("X-User-Id") Long userId) {
-
-        return vehicleService.getByCustomer(userId);
-    }
+    
 }

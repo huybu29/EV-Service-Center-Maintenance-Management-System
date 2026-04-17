@@ -330,8 +330,8 @@ const CustomerDashboard = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         const [vehicleRes, appointmentRes, stationRes] = await Promise.all([
-          api.get("/vehicles/me", { headers }),
-          api.get("/appointments/me", { headers }),
+          api.get(`/vehicles/${user?.id}`, { headers }),
+          api.get(`/appointments/${user?.id}`, { headers }),
           api.get("/stations", { headers })
         ]);
 

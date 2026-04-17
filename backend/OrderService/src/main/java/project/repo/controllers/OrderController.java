@@ -1,6 +1,7 @@
 package project.repo.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import project.repo.dtos.OrderPartDTO;
 import project.repo.dtos.OrderChecklistItemDTO;
@@ -16,121 +17,95 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    // Hàm kiểm tra quyền hạn (Helper)
-    private void checkRole(String roleHeader, String... allowedRoles) {
-        for (String role : allowedRoles) {
-            if (roleHeader != null && roleHeader.equalsIgnoreCase("ROLE_" + role)) {
-                return;
-            }
-        }
-        throw new RuntimeException("Access denied: required role " + String.join(", ", allowedRoles));
-    }
-
+  
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @GetMapping("/all")
-    public List<OrderDTO> getAllOrders(@RequestHeader("X-User-Role") String role) {
-        checkRole(role, "ADMIN", "STAFF");
+    public List<OrderDTO> getAllOrders() {
         return orderService.getAllOrders();
     }
+
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @PostMapping("/from-booking")
     public OrderDTO createOrderFromAppointment(@RequestBody OrderDTO orderDTO) {
         return orderService.createOrderFromAppointment(orderDTO);
     }
 
-    // 2. Lấy chi tiết đơn hàng
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN', 'TECHNICIAN')")
     @GetMapping("/{orderId}")
-    public OrderDTO getOrderWithChecklist(
-            @RequestHeader("X-User-Role") String role,
-            @PathVariable Long orderId) {
-        checkRole(role, "STAFF", "ADMIN", "TECHNICIAN");
+    public OrderDTO getOrderWithChecklist(@PathVariable Long orderId) {
         return orderService.getOrderWithChecklist(orderId);
     }
 
-    // 3. Cập nhật trạng thái đơn hàng (Bắt đầu / Hoàn thành)
+    
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN', 'TECHNICIAN')")
     @PutMapping("/{orderId}/status")
     public OrderDTO updateOrderStatus(
-            @RequestHeader("X-User-Role") String role,
             @PathVariable Long orderId,
             @RequestParam String status) { 
-        checkRole(role, "STAFF", "ADMIN", "TECHNICIAN");
         return orderService.updateManualOrderStatus(orderId, status);
     }
 
-    // 4. Lấy đơn hàng theo ID lịch hẹn
+   
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN', 'TECHNICIAN')")
     @GetMapping("/by-appointment/{appointmentId}")
-    public OrderDTO getOrderByAppointmentId(
-            @RequestHeader("X-User-Role") String role,
-            @PathVariable Long appointmentId) {
-        checkRole(role, "STAFF", "ADMIN", "TECHNICIAN");
+    public OrderDTO getOrderByAppointmentId(@PathVariable Long appointmentId) {
         return orderService.getOrderByAppointmentId(appointmentId);
     }
 
-    // 5. Lấy danh sách công việc của tôi (Technician)
+    @PreAuthorize("hasRole('TECHNICIAN')")
     @GetMapping("/my-orders")
-    public List<OrderDTO> getMyOrders(
-            @RequestHeader("X-User-Role") String role,
-            @RequestHeader("X-User-Id") Long userId) {
-        checkRole(role, "TECHNICIAN");
+    public List<OrderDTO> getMyOrders(@RequestHeader("X-User-Id") Long userId) {
         return orderService.getMyOrder(userId);
     }
 
-    // 6. Lấy checklist của đơn hàng
+    
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN', 'TECHNICIAN')")
     @GetMapping("/{orderId}/checklist")
-    public List<OrderChecklistItemDTO> getChecklistByOrder(
-            @RequestHeader("X-User-Role") String role,
-            @PathVariable Long orderId) {
-        checkRole(role, "CUSTOMER", "STAFF", "ADMIN", "TECHNICIAN");
+    public List<OrderChecklistItemDTO> getChecklistByOrder(@PathVariable Long orderId) {
         return orderService.getChecklistByOrder(orderId);
     }
 
-    // 7. Cập nhật trạng thái từng mục trong checklist
+    
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN', 'TECHNICIAN')")
     @PutMapping("/{orderId}/checklist/{itemId}")
     public OrderChecklistItemDTO updateChecklistItemStatus(
-            @RequestHeader("X-User-Role") String role,
             @PathVariable Long orderId,
             @PathVariable Long itemId,
             @RequestParam String status,
             @RequestParam(required = false) String notes) {
-        checkRole(role, "STAFF", "ADMIN", "TECHNICIAN");
         return orderService.updateChecklistItemStatus(orderId, itemId, status, notes);
     }
 
-    // 8. Phân công kỹ thuật viên
+    
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     @PutMapping("/{orderId}/assign")
     public OrderDTO assignTechnician(
-            @RequestHeader("X-User-Role") String role,
             @PathVariable Long orderId,
             @RequestParam Long technicianId) {
-        checkRole(role, "STAFF", "ADMIN");
         return orderService.assignTechnician(orderId, technicianId);
     }
 
-    // 9. Lấy checklist mẫu
+  
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN', 'TECHNICIAN')")
     @GetMapping("/default-checklist")
-    public List<String> getDefaultChecklist(
-            @RequestHeader("X-User-Role") String role,
-            @RequestParam String serviceType) {
-        checkRole(role, "STAFF", "ADMIN", "TECHNICIAN");
+    public List<String> getDefaultChecklist(@RequestParam String serviceType) {
         return orderService.getDefaultChecklist(serviceType);
     }
 
-    // 10. Hủy đơn hàng khi hủy lịch
+  
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     @PutMapping("/cancel-by-booking/{appointmentId}")
-    public void cancelOrderByAppointment(
-            @RequestHeader("X-User-Role") String role,
-            @PathVariable Long appointmentId) {
-        checkRole(role, "STAFF", "ADMIN");
+    public void cancelOrderByAppointment(@PathVariable Long appointmentId) {
         orderService.cancelOrderByAppointment(appointmentId);
     }
     
-    // 11. Thêm phụ tùng (Dùng RequestBody DTO thay vì RequestParam)
+    
+    @PreAuthorize("hasAnyRole('TECHNICIAN', 'STAFF', 'ADMIN')")
     @PostMapping("/{orderId}/parts")
     public OrderDTO addPart(
-            @RequestHeader("X-User-Role") String role,
             @PathVariable Long orderId,
-            @RequestBody OrderPartDTO request) { // <--- QUAN TRỌNG: Dùng @RequestBody
-
-        checkRole(role, "TECHNICIAN", "STAFF", "ADMIN");
-        
+            @RequestBody OrderPartDTO request) { 
         return orderService.addPartToOrder(
             orderId, 
             request.getPartId(), 
@@ -139,12 +114,10 @@ public class OrderController {
         );
     }
     
-    // 12. Lịch sử sửa chữa của khách hàng (Placeholder)
+    // 12. Lịch sử sửa chữa của khách hàng
+    @PreAuthorize("hasRole('CUSTOMER')")
     @GetMapping("/history")
-    public List<OrderDTO> getCustomerHistory(
-            @RequestHeader("X-User-Role") String role,
-            @RequestHeader("X-User-Id") Long customerId) {
-        checkRole(role, "CUSTOMER");
+    public List<OrderDTO> getCustomerHistory(@RequestHeader("X-User-Id") Long customerId) {
         // return orderService.getOrdersByCustomerId(customerId);
         return List.of(); 
     }

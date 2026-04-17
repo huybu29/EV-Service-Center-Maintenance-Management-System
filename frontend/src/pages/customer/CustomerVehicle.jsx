@@ -21,7 +21,7 @@ const MyVehicles = () => {
 
   const fetchVehicles = async () => {
     try {
-      const res = await api.get(`/vehicles/me`, {
+      const res = await api.get(`/vehicles/${userId}`, {
         headers: {
           "X-User-Role": userRole,
           "X-User-Id": userId,
