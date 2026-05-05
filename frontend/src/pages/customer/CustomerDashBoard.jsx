@@ -13,6 +13,7 @@ import {
   HiOutlineClock,
   HiOutlineAnnotation
 } from "react-icons/hi";
+import { jwtDecode } from "jwt-decode";
 
 // === DỮ LIỆU GIẢ (MOCK) CHO REMINDERS ===
 const mockReminders = [
@@ -327,11 +328,14 @@ const CustomerDashboard = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("accessToken");
+        const user = jwtDecode(token);
+        console.log("Decoded user info in Dashboard:", user);
         const headers = { Authorization: `Bearer ${token}` };
-
+      
+       
         const [vehicleRes, appointmentRes, stationRes] = await Promise.all([
-          api.get(`/vehicles/${user?.id}`, { headers }),
-          api.get(`/appointments/${user?.id}`, { headers }),
+          api.get(`/vehicles/customer/${user?.userId}`, { headers }),
+          api.get(`/appointments/customer/${user?.userId}`, { headers }),
           api.get("/stations", { headers })
         ]);
 

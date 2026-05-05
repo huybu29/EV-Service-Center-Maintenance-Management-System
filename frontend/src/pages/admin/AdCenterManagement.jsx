@@ -17,11 +17,12 @@ const AdminStations = () => {
   });
 
   const navigate = useNavigate();
-
+  const token = localStorage.getItem("accessToken");
+  
   const fetchStations = async () => {
     try {
       const res = await api.get("/stations", {
-        headers: { "X-User-Role": "ROLE_ADMIN" },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setStations(res.data);
       setFilteredStations(res.data);

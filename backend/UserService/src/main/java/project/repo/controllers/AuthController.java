@@ -24,11 +24,11 @@ public class AuthController {
 
     // 🔹 Đăng ký
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody AuthRequest request) {
+    public ResponseEntity<String> register(@RequestBody AuthRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body("❌ Username already taken");
+                    .body(" Username already taken");
         }
 
         User user = User.builder()
@@ -41,33 +41,31 @@ public class AuthController {
                 .build();
 
         userRepository.save(user);
-        return ResponseEntity.ok("✅ User registered successfully");
+        return ResponseEntity.ok(" User registered successfully");
     }
 
-    // 🔹 Đăng nhập
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+    public ResponseEntity<Object> login(@RequestBody AuthRequest request) {
         try {
             User user = userRepository.findByUsername(request.getUsername())
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("❌ Invalid credentials");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
             }
 
             String token = jwtService.generateToken(user);
             return ResponseEntity.ok(new AuthResponse(token));
 
         } catch (UsernameNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("❌ User not found");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("⚠️ Login failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(" Login failed: " + e.getMessage());
         }
     }
 
-    // 🔹 Đăng xuất (thực tế chỉ là clear token bên client)
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
-        return ResponseEntity.ok("✅ Logout successful (clear token on client)");
+        return ResponseEntity.ok(" Logout successful (clear token on client)");
     }
 }

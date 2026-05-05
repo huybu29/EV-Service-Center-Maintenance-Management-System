@@ -35,33 +35,25 @@ protected void doFilterInternal(HttpServletRequest request,
     final String jwt;
     final String username;
 
-    // 🔹 Không có header hoặc header không bắt đầu bằng Bearer => bỏ qua
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
         filterChain.doFilter(request, response);
         return;
     }
 
-    // 🔹 Cắt "Bearer " để lấy token
     jwt = authHeader.substring(7);
     username = jwtService.extractUsername(jwt);
 
-    // ✅ In ra username để debug
-    System.out.println("JWT Extracted Username: " + username);
+    
 
-    // 🔹 Nếu có username và chưa được xác thực trước đó
     if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         UserDetails userDetails = userService.loadUserByUsername(username);
 
-        // 🔹 Kiểm tra token hợp lệ
         if (jwtService.isTokenValid(jwt, userDetails)) {
 
-            // ✅ Lấy role trực tiếp từ token
             String role = jwtService.extractRole(jwt);
 
-            // ✅ In ra role để debug
-            System.out.println("JWT Extracted Role: " + role);
             
-            // ✅ Gán quyền xác thực vào context
+
             SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" +role);
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(
@@ -72,6 +64,5 @@ protected void doFilterInternal(HttpServletRequest request,
         }
     }
 
-    // 🔹 Tiếp tục filter chain
     filterChain.doFilter(request, response);
 }}

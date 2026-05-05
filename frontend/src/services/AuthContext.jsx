@@ -1,31 +1,34 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
 
-  const [isLoggedIn, setIsLoggedIn] = useState(!!sessionStorage.getItem("accessToken"));
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("accessToken"));
   const [user, setUser] = useState(null);
 
 
   useEffect(() => {
  
-    const token = sessionStorage.getItem("accessToken");
+    const token = localStorage.getItem("accessToken");
+   
+    const userInfo = token ? jwtDecode(token) : null;
+   
     
     if (token) {
       axios
-        .get("http://localhost:8067/api/users/me", {
+        .get(`http://localhost:8067/api/users/${userInfo.userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => {
           setUser(res.data);
-          console.log(res.data);
+          
         })
         .catch((err) => {
           console.error("Không thể lấy thông tin người dùng:", err);
-        
-          logout(); 
+          logout();
         });
     } else {
       
@@ -35,17 +38,17 @@ export const AuthProvider = ({ children }) => {
 
   const login = (token, refreshToken) => {
   
-    sessionStorage.setItem("accessToken", token);
+    localStorage.setItem("accessToken", token);
 
-    if (refreshToken) sessionStorage.setItem("refreshToken", refreshToken);
+    if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
     
     setIsLoggedIn(true);
   };
 
   const logout = () => {
-    // 4. SỬA: Xóa khỏi sessionStorage
-    sessionStorage.removeItem("accessToken");
-    sessionStorage.removeItem("refreshToken"); // Xóa cả refresh token nếu có
+   
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken"); 
     
     setIsLoggedIn(false);
     setUser(null);

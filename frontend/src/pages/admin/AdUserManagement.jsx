@@ -18,11 +18,11 @@ const AdminUsers = () => {
     status: "ACTIVE",
   });
   const navigate = useNavigate();
-
+  const token = localStorage.getItem("accessToken");
   const fetchUsers = async () => {
     try {
       const res = await api.get("/users", {
-        headers: { "X-User-Role": "ROLE_ADMIN" },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
       setFilteredUsers(res.data);

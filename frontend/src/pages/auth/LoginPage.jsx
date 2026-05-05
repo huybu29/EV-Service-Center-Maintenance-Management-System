@@ -4,6 +4,7 @@ import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { FiUser, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { AiOutlineGoogle } from "react-icons/ai";
+import { jwtDecode } from "jwt-decode";
 
 const LoginPage = () => {
   const { login } = useContext(AuthContext);
@@ -41,22 +42,21 @@ const LoginPage = () => {
     try {
       const res = await api.post("auth/login", { username, password });
       const token = res.data.token;
-
+      const decodedToken = jwtDecode(token);
+      const userRole = decodedToken.role;
+      
       if (!token) {
         throw new Error("Không nhận được token");
       }
 
-      const userRes = await api.get(`users/${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const user = userRes.data;
+     
 
-      if (!user || !user.role) {
-        throw new Error("Không thể lấy thông tin người dùng hoặc vai trò");
+      if (!userRole) {
+        throw new Error("Không thể lấy thông tin vai trò người dùng");
       }
 
       login(token);
-      roleBasedRedirect(user.role);
+      roleBasedRedirect(userRole);
 
     } catch (err) {
       console.error("Login failed", err);

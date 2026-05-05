@@ -1,7 +1,7 @@
 package project.repo.mapper;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+
 import project.repo.dtos.UserDTO;
 import project.repo.entity.User;
 

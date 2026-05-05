@@ -248,16 +248,16 @@ public class AppointmentService {
                     .message(message)
                     .type(type)
                     .build();
-            System.out.println("🚀 Bắt đầu gửi tin RabbitMQ...");   
+            System.out.println(" Bắt đầu gửi tin RabbitMQ...");   
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.EXCHANGE_NAME,
                     RabbitMQConfig.ROUTING_KEY,
                     event
             );
-            System.out.println("✅ Gửi thành công!");
-            System.out.println("✅ Gửi thông báo: " + type + " tới User " + userId);
+            System.out.println("Gửi thành công!");
+            System.out.println("Gửi thông báo: " + type + " tới User " + userId);
         } catch (Exception e) {
-            System.err.println("⚠️ Lỗi gửi RabbitMQ: " + e.getMessage());
+            System.err.println("Lỗi gửi RabbitMQ: " + e.getMessage());
         }
     }
 }

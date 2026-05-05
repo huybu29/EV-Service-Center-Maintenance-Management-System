@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(name = "Booking-service", url = "http://localhost:8081", contextId = "bookingClient") 
 public interface BookingClient {
-    @PutMapping("/api/appointments/{id}/{status}")
+    @PutMapping("/api/appointments/{id}/status")
     AppointmentDTO updateAppointmentStatus(@PathVariable Long id,
-        @PathVariable String status,
+        @RequestBody String status,
         @RequestHeader("X-User-Role") String role);  
 
    

@@ -16,12 +16,14 @@ const MyVehicles = () => {
     vin: "",
   });
 
-  const userId = localStorage.getItem("userId");
-  const userRole = localStorage.getItem("userRole");
+    const token = localStorage.getItem("accessToken");
+    const user = token ? jwtDecode(token) : null;
+    const userId = user?.userId;
+    const userRole = user?.role;
 
   const fetchVehicles = async () => {
     try {
-      const res = await api.get(`/vehicles/${userId}`, {
+      const res = await api.get(`/vehicles/customer/${userId}`, {
         headers: {
           "X-User-Role": userRole,
           "X-User-Id": userId,

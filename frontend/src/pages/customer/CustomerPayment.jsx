@@ -7,7 +7,7 @@ import {
   HiOutlineCash,
   HiOutlineExclamation
 } from "react-icons/hi";
-
+import { jwtDecode } from "jwt-decode";
 // === HELPER: Màu sắc trạng thái ===
 const getStatusStyle = (status) => {
   switch (status) {
@@ -119,7 +119,8 @@ const PaymentPage = () => {
     const fetchPayments = async () => {
       try {
         const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
-        const res = await api.get(`/payments/${user?.id}`, {
+        const user = jwtDecode(token);
+        const res = await api.get(`/payments/${user?.userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setPayments(res.data || []);

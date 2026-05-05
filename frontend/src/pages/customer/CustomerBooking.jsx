@@ -11,7 +11,7 @@ import {
   HiOutlineCalendar,
   HiOutlineAnnotation, // Icon mới cho ghi chú
 } from "react-icons/hi";
-
+import { jwtDecode } from "jwt-decode";
 // === 1. CẤU HÌNH DỊCH VỤ (KHỚP VỚI ENUM JAVA) ===
 // src/pages/customer/BookingPage.jsx
 
@@ -162,13 +162,14 @@ const BookingPage = () => {
       setLoading(true);
       try {
         const token = localStorage.getItem("accessToken");
+        const user = token ? jwtDecode(token) : null;
         const headers = { Authorization: `Bearer ${token}` };
 
         const [vehiclesRes, stationsRes] = await Promise.all([
-          api.get(`/vehicles/${user?.id}`, { headers }),
+          api.get(`/vehicles/customer/${user?.userId}`, { headers }),
           api.get(`/stations`, { headers }), // Đảm bảo API này trả về danh sách Service Center
         ]);
-
+        console.log(stationsRes.data);
         setVehicles(vehiclesRes.data || []);
         setStations(stationsRes.data || []);
 

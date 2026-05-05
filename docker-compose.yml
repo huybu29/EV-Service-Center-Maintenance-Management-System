@@ -1,11 +1,7 @@
 version: '3.8'
 
 services:
-  # ====================================================
-  # 1. INFRASTRUCTURE (HẠ TẦNG)
-  # ====================================================
-  
-  # Eureka Server: Trái tim của hệ thống
+
   eureka-server:
     build: ./backend/eureka-server
     container_name: micro_eureka
@@ -20,7 +16,7 @@ services:
       retries: 10
       start_period: 30s 
 
-  # MySQL: Chứa dữ liệu
+
   mysql:
     image: mysql:8.0
     container_name: micro_mysql
@@ -42,7 +38,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # RabbitMQ: Hàng đợi tin nhắn
   rabbitmq:
     image: rabbitmq:3-management
     container_name: micro_rabbitmq
@@ -58,7 +53,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis: Cache
+
   redis:
     image: redis:alpine
     container_name: micro_redis
@@ -73,21 +68,56 @@ services:
       timeout: 5s
       retries: 5
 
-  # Apache NiFi
-  nifi:
-    image: apache/nifi:latest
-    container_name: micro_nifi
+
+
+  postgres-sonar:
+    image: postgres:15
+    container_name: micro_postgres_sonar
+    restart: always
     environment:
-      - NIFI_WEB_HTTP_PORT=8080
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonarpassword
+      POSTGRES_DB: sonarqube_db
+    volumes:
+      - postgres_sonar_data:/var/lib/postgresql/data
+    networks:
+      - micro_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonarqube_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: micro_sonarqube
+    restart: always
+    depends_on:
+      postgres-sonar:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://postgres-sonar:5432/sonarqube_db
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonarpassword
     ports:
-      - "8443:8443"
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
     networks:
       - micro_net
 
-# BẮT BUỘC PHẢI CÓ PHẦN NÀY ĐỂ DOCKER TẠO MẠNG VÀ Ổ ĐĨA
+
 volumes:
   mysql_data:
   nifi_data:
+
+  postgres_sonar_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
 
 networks:
   micro_net:

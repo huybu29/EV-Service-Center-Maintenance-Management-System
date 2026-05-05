@@ -3,7 +3,6 @@ package project.repo.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.repo.dtos.ServiceCenterDTO;
@@ -14,7 +13,6 @@ import project.repo.repository.ServiceCenterRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// Tên Cache dùng chung
 final class CacheNames {
     public static final String STATIONS = "stations";
 }
@@ -27,7 +25,6 @@ public class ServiceCenterService {
     private final ServiceCenterRepository serviceCenterRepository;
     private final ServiceCenterMapper serviceCenterMapper;
 
-    // 🔹 1. Tạo mới: Xóa toàn bộ cache list (vì findAll() thay đổi)
     @CacheEvict(value = CacheNames.STATIONS, allEntries = true)
     public ServiceCenterDTO create(ServiceCenterDTO dto) {
         ServiceCenter entity = serviceCenterMapper.toEntity(dto);
@@ -35,8 +32,6 @@ public class ServiceCenterService {
         return serviceCenterMapper.toDto(saved);
     }
 
-    // 🔹 2. Lấy tất cả: Cache kết quả
-    // Cache Key sẽ là tên method (findAll)
     @Cacheable(CacheNames.STATIONS)
     public List<ServiceCenterDTO> findAll() {
         return serviceCenterRepository.findAll()
@@ -45,7 +40,6 @@ public class ServiceCenterService {
                 .collect(Collectors.toList());
     }
 
-    // 🔹 3. Lấy theo ID: Cache kết quả theo ID
     @Cacheable(value = CacheNames.STATIONS, key = "#id")
     public ServiceCenterDTO findById(Long id) {
         return serviceCenterRepository.findById(id)
@@ -53,8 +47,7 @@ public class ServiceCenterService {
                 .orElse(null);
     }
 
-    // 🔹 4. Cập nhật: Xóa entry cũ dựa trên ID
-    @CacheEvict(value = CacheNames.STATIONS, key = "#id")
+    @CacheEvict(value = CacheNames.STATIONS, allEntries = true)
     public ServiceCenterDTO update(Long id, ServiceCenterDTO dto) {
         ServiceCenter existing = serviceCenterRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service Center not found"));
@@ -73,13 +66,7 @@ public class ServiceCenterService {
         return serviceCenterMapper.toDto(updated);
     }
 
-    // 🔹 5. Xóa: Xóa entry cụ thể và xóa cache list (allEntries)
-    @Caching(evict = { 
-        // Xóa entry của ID này
-        @CacheEvict(value = CacheNames.STATIONS, key = "#id"), 
-        // Xóa cache của findAll()
-        @CacheEvict(value = CacheNames.STATIONS, allEntries = true) 
-    })
+    @CacheEvict(value = CacheNames.STATIONS, allEntries = true)
     public void delete(Long id) {
         serviceCenterRepository.deleteById(id);
     }

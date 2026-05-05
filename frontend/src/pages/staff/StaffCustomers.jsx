@@ -284,7 +284,7 @@ const StaffCustomers = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const token = sessionStorage.getItem("accessToken");
+        const token = localStorage.getItem("accessToken");
         const res = await api.get("/users/role/ROLE_CUSTOMER", { headers: { Authorization: `Bearer ${token}` } });
         setCustomers(res.data);
         setFilteredCustomers(res.data);
@@ -310,7 +310,7 @@ const StaffCustomers = () => {
     setSelectedCustomer(customer);
     setLoadingDetails(true);
     try {
-      const token = sessionStorage.getItem("accessToken");
+      const token = localStorage.getItem("accessToken");
       const res = await api.get(`/vehicles/customer/${customer.id}`, { headers: { Authorization: `Bearer ${token}` } });
       setSelectedVehicles(res.data);
     } catch (e) {
